@@ -1,4 +1,3 @@
-import { type } from 'arktype';
 import { changeCasing, type CasingType } from './casing';
 import { invariant, type Constrain, type Expand, type Updater } from './utils';
 import {
@@ -577,8 +576,10 @@ export class MultiStepFormStepSchema<T extends Step> {
    * @param updater The updated data for the step.
    */
   update<
-    Step extends ExtractStepFromKey<Constrain<keyof ResolvedStep<T>, string>>
-  >(step: Step, updater: Updater<GetCurrentStep<ResolvedStep<T>, Step>>): void;
+    Step extends ExtractStepFromKey<Constrain<keyof ResolvedStep<T>, string>>,
+    CurrentStepData extends GetCurrentStep<ResolvedStep<T>, Step>,
+    UpdatedData = CurrentStepData
+  >(step: Step, updater: Updater<CurrentStepData, UpdatedData>): void;
   /**
    * Update a specific field's data for the specified step.
    * @param step The step to update.
@@ -587,23 +588,24 @@ export class MultiStepFormStepSchema<T extends Step> {
    */
   update<
     Step extends ExtractStepFromKey<Constrain<keyof ResolvedStep<T>, string>>,
-    Field extends keyof GetCurrentStep<ResolvedStep<T>, Step>
+    CurrentStepData extends GetCurrentStep<ResolvedStep<T>, Step>,
+    Field extends keyof CurrentStepData,
+    UpdatedData = CurrentStepData[Field]
   >(
     step: Step,
     field: Field,
-    updater: Updater<GetCurrentStep<ResolvedStep<T>, Step>[Field]>
+    updater: Updater<CurrentStepData[Field], UpdatedData>
   ): void;
   update<
     Step extends ExtractStepFromKey<Constrain<keyof ResolvedStep<T>, string>>,
     Field extends keyof GetCurrentStep<ResolvedStep<T>, Step>
   >(
     step: Step,
-    fieldOrUpdated: Field | object | Function,
+    fieldOrUpdater: Field | object | Function,
     updater?: object | Function
   ) {
-    const steps = Object.keys(this.value).map((key) =>
-      parseInt(key.replace('step', ''))
-    );
+    const steps = this.stepNumbers;
+
     invariant(
       typeof step === 'number',
       `Type of step must be a number, was ${typeof step}`,
@@ -618,13 +620,9 @@ export class MultiStepFormStepSchema<T extends Step> {
 
     const stepKey = `step${step}` as keyof ResolvedStep<T>;
 
-    if (typeof fieldOrUpdated === 'string') {
-      invariant(
-        typeof updater === 'function' || typeof updater === 'object',
-        `The updater must be a function or object, was ${typeof updater}`,
-        TypeError
-      );
+    if (typeof fieldOrUpdater === 'string') {
       invariant(this.value[stepKey], `No data found for step ${step}`);
+
       invariant(
         typeof this.value[stepKey] === 'object',
         `The values for step ${step} is not an object, was ${typeof this.value[
@@ -632,29 +630,40 @@ export class MultiStepFormStepSchema<T extends Step> {
         ]}`
       );
       invariant(
-        fieldOrUpdated in this.value[stepKey],
-        `The field ${fieldOrUpdated} is not a valid field. Valid fields include ${Object.keys(
+        fieldOrUpdater in this.value[stepKey],
+        `The field ${fieldOrUpdater} is not a valid field. Valid fields include ${Object.keys(
           this.value[stepKey]
         ).join(', ')}`
+      );
+      const targetType =
+        typeof this.value[stepKey][
+          fieldOrUpdater as keyof (keyof ResolvedStep<T>)
+        ];
+      invariant(
+        typeof updater === targetType,
+        `The updater must be a "${targetType}", was "${typeof updater}"`,
+        TypeError
       );
 
       this.value[stepKey] = {
         ...this.value[stepKey],
-        [fieldOrUpdated]:
+        [fieldOrUpdater]:
           typeof updater === 'function'
             ? updater(
                 this.value[stepKey][
-                  fieldOrUpdated as keyof (keyof ResolvedStep<T>)
+                  fieldOrUpdater as keyof (keyof ResolvedStep<T>)
                 ]
               )
             : updater,
       };
     } else if (
-      typeof fieldOrUpdated === 'object' ||
-      typeof fieldOrUpdated === 'function'
+      typeof fieldOrUpdater === 'object' ||
+      typeof fieldOrUpdater === 'function'
     ) {
       const updatedData =
-        typeof updater === 'function' ? updater(this.value[stepKey]) : updater;
+        typeof fieldOrUpdater === 'function'
+          ? fieldOrUpdater(this.value[stepKey])
+          : fieldOrUpdater;
 
       invariant(
         typeof updatedData === 'object',
@@ -667,8 +676,8 @@ export class MultiStepFormStepSchema<T extends Step> {
       };
     } else {
       throw new TypeError(
-        `The second parameter must be one of the following: a specific field to update (string), an object with the updated data, or a function that returns the updated data. It was ${typeof fieldOrUpdated}`,
-        { cause: fieldOrUpdated }
+        `The second parameter must be one of the following: a specific field to update (string), an object with the updated data, or a function that returns the updated data. It was ${typeof fieldOrUpdater}`,
+        { cause: fieldOrUpdater }
       );
     }
   }
