@@ -67,12 +67,41 @@ export declare namespace StandardSchemaV1 {
   >['output'];
 }
 
+// Types taken from Tanstack Router
+export interface ValidatorAdapter<TInput, TOutput> {
+  types: {
+    input: TInput;
+    output: TOutput;
+  };
+  parse: (input: unknown) => TOutput;
+}
+export interface ValidatorObj<TInput, TOutput> {
+  parse: ValidatorFn<TInput, TOutput>;
+}
 export type ValidatorFn<Input, Output> = (input: Input) => Output;
 export type Validator<Input, Output> =
   | ValidatorFn<Input, Output>
   | StandardSchemaValidator<Input, Output>;
-export type DefaultValidator = Validator<Record<string, unknown>, {}>;
+export type AnySchema = {};
+export type DefaultValidator = Validator<Record<string, unknown>, AnySchema>;
+export type AnyStandardSchemaValidator = StandardSchemaValidator<any, any>;
 export type AnyValidator = Validator<any, any>;
+export type AnyValidatorObj = ValidatorObj<any, any>;
+export type AnyValidatorAdapter = ValidatorAdapter<any, any>;
+export type ResolveValidatorOutputFn<TValidator> = TValidator extends (
+  ...args: any
+) => infer TSchema
+  ? TSchema
+  : AnySchema;
+export type ResolveValidatorOutput<TValidator> = unknown extends TValidator
+  ? TValidator
+  : TValidator extends AnyStandardSchemaValidator
+  ? NonNullable<TValidator['~standard']['types']>['output']
+  : TValidator extends AnyValidatorAdapter
+  ? TValidator['types']['output']
+  : TValidator extends AnyValidatorObj
+  ? ResolveValidatorOutputFn<TValidator['parse']>
+  : ResolveValidatorOutputFn<TValidator>;
 
 export function runStandardValidation<Schema extends StandardSchemaValidator>(
   schema: Schema,
