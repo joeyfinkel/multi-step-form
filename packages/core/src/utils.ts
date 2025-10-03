@@ -88,7 +88,12 @@ export type Join<T extends string[], D extends string> = T extends [
     ? F
     : `${F}${D}${Join<R, D>}`
   : '';
-
+export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = {
+  // For each key K in the desired set of keys...
+  [K in Keys]-?: Required<Pick<T, K>> & Partial<Omit<T, K>>;
+  // ...create a union of all those possible objects.
+}[Keys];
+export type ArrayElement<T> = T extends Array<infer Element> ? Element : never;
 function lazy(strings: TemplateStringsArray, ...values: any[]) {
   return () => String.raw({ raw: strings }, ...values);
 }

@@ -4,16 +4,18 @@ import { MultiStepFormStepSchema } from '../../src';
 describe('multi step form step schema: label', () => {
   it('should have label=false when specified', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        title: 'Step 1',
-        nameTransformCasing: 'kebab',
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-            label: false,
-          },
-        ],
+      steps: {
+        step1: {
+          title: 'Step 1',
+          nameTransformCasing: 'kebab',
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+              label: false,
+            },
+          ],
+        },
       },
     });
 
@@ -22,15 +24,17 @@ describe('multi step form step schema: label', () => {
 
   it('should have a default label when no label is specified', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        title: 'Step 1',
-        nameTransformCasing: 'kebab',
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-          },
-        ],
+      steps: {
+        step1: {
+          title: 'Step 1',
+          nameTransformCasing: 'kebab',
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+            },
+          ],
+        },
       },
     });
 
@@ -41,16 +45,18 @@ describe('multi step form step schema: label', () => {
 
   it('should have a custom label when specified', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        title: 'Step 1',
-        nameTransformCasing: 'kebab',
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-            label: 'First Name',
-          },
-        ],
+      steps: {
+        step1: {
+          title: 'Step 1',
+          nameTransformCasing: 'kebab',
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+              label: 'First Name',
+            },
+          ],
+        },
       },
     });
 

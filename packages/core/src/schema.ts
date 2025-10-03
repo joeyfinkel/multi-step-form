@@ -58,12 +58,26 @@ const t = new MultiStepFormSchema({
         {
           defaultValue: '',
           name: 'first' as const,
-          nameTransformCasing: 'camel'
+          nameTransformCasing: 'camel',
         },
       ],
       title: 'test',
     },
+    step2: {
+      fields: [
+        {
+          defaultValue: '',
+          name: 'last' as const,
+        },
+      ],
+      title: 'second',
+    },
   },
 });
-t.stepSchema.value.step1.nameTransformCasing;
+t.stepSchema.createHelperFn(
+  {
+    stepData: 'all',
+  },
+  ({ ctx }) => {}
+);
 //                          ^?

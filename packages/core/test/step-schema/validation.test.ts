@@ -5,22 +5,24 @@ import { MultiStepFormStepSchema } from '../../src';
 describe('multi step form step schema: field validation', () => {
   it('should validate fields for a step', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        title: 'Validated Step 1',
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-          },
-          {
-            name: 'lastName' as const,
-            defaultValue: '',
-          },
-        ],
-        validateFields: type({
-          firstName: 'string',
-          lastName: 'string',
-        }),
+      steps: {
+        step1: {
+          title: 'Validated Step 1',
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+            },
+            {
+              name: 'lastName' as const,
+              defaultValue: '',
+            },
+          ],
+          validateFields: type({
+            firstName: 'string',
+            lastName: 'string',
+          }),
+        },
       },
     });
 
@@ -52,22 +54,24 @@ describe('multi step form step schema: field validation', () => {
       // This function is needed so that vitest can intercept the value
       () =>
         new MultiStepFormStepSchema({
-          step1: {
-            title: 'Validated Step 1',
-            fields: [
-              {
-                name: 'firstName' as const,
-                defaultValue: '',
-              },
-              {
-                name: 'lastName' as const,
-                defaultValue: '',
-              },
-            ],
-            validateFields: type({
-              fName: 'string',
-              lName: 'string',
-            }),
+          steps: {
+            step1: {
+              title: 'Validated Step 1',
+              fields: [
+                {
+                  name: 'firstName' as const,
+                  defaultValue: '',
+                },
+                {
+                  name: 'lastName' as const,
+                  defaultValue: '',
+                },
+              ],
+              validateFields: type({
+                fName: 'string',
+                lName: 'string',
+              }),
+            },
           },
         })
     ).toThrowError(Error);

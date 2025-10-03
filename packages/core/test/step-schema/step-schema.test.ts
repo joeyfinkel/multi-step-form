@@ -4,14 +4,16 @@ import { MultiStepFormStepSchema } from '../../src/step-schema.ts.ts';
 describe('multi step form step schema', () => {
   it('should create a valid step schema', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-          },
-        ],
-        title: 'Step 1',
+      steps: {
+        step1: {
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+            },
+          ],
+          title: 'Step 1',
+        },
       },
     });
 
@@ -33,24 +35,26 @@ describe('multi step form step schema', () => {
 
   it('should return the data for the first step', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-            nameTransformCasing: 'camel',
-          },
-        ],
-        title: 'Step 1',
-      },
-      step2: {
-        fields: [
-          {
-            name: 'lastName' as const,
-            defaultValue: '',
-          },
-        ],
-        title: 'Step 2',
+      steps: {
+        step1: {
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+              nameTransformCasing: 'camel',
+            },
+          ],
+          title: 'Step 1',
+        },
+        step2: {
+          fields: [
+            {
+              name: 'lastName' as const,
+              defaultValue: '',
+            },
+          ],
+          title: 'Step 2',
+        },
       },
     });
     const step1 = stepSchema.first();
@@ -74,24 +78,26 @@ describe('multi step form step schema', () => {
 
   it('should return the data for the last step', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-            nameTransformCasing: 'camel',
-          },
-        ],
-        title: 'Step 1',
-      },
-      step2: {
-        fields: [
-          {
-            name: 'lastName' as const,
-            defaultValue: '',
-          },
-        ],
-        title: 'Step 2',
+      steps: {
+        step1: {
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+              nameTransformCasing: 'camel',
+            },
+          ],
+          title: 'Step 1',
+        },
+        step2: {
+          fields: [
+            {
+              name: 'lastName' as const,
+              defaultValue: '',
+            },
+          ],
+          title: 'Step 2',
+        },
       },
     });
     const step2 = stepSchema.last();
@@ -115,33 +121,35 @@ describe('multi step form step schema', () => {
 
   it('should return the data for the specified step', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-            nameTransformCasing: 'camel',
-          },
-        ],
-        title: 'Step 1',
-      },
-      step2: {
-        fields: [
-          {
-            name: 'lastName' as const,
-            defaultValue: '',
-          },
-        ],
-        title: 'Step 2',
-      },
-      step3: {
-        title: 'Step 3',
-        fields: [
-          {
-            name: 'age' as const,
-            defaultValue: 25,
-          },
-        ],
+      steps: {
+        step1: {
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+              nameTransformCasing: 'camel',
+            },
+          ],
+          title: 'Step 1',
+        },
+        step2: {
+          fields: [
+            {
+              name: 'lastName' as const,
+              defaultValue: '',
+            },
+          ],
+          title: 'Step 2',
+        },
+        step3: {
+          title: 'Step 3',
+          fields: [
+            {
+              name: 'age' as const,
+              defaultValue: 25,
+            },
+          ],
+        },
       },
     });
     const step2 = stepSchema.get({ step: 2 });

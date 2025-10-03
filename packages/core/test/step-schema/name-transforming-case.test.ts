@@ -4,14 +4,16 @@ import { MultiStepFormStepSchema } from '../../src';
 describe('multi step form step schema: name transform casing', () => {
   it('should assign a default name transform casing to the step', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        title: 'Step 1',
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-          },
-        ],
+      steps: {
+        step1: {
+          title: 'Step 1',
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+            },
+          ],
+        },
       },
     });
     const { nameTransformCasing, fields } = stepSchema.value.step1;
@@ -23,15 +25,17 @@ describe('multi step form step schema: name transform casing', () => {
 
   it('should override the default name transform casing for the step', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        title: 'Step 1',
-        nameTransformCasing: 'kebab',
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-          },
-        ],
+      steps: {
+        step1: {
+          title: 'Step 1',
+          nameTransformCasing: 'kebab',
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+            },
+          ],
+        },
       },
     });
     const { nameTransformCasing, fields } = stepSchema.value.step1;
@@ -43,24 +47,26 @@ describe('multi step form step schema: name transform casing', () => {
 
   it('should override the default name transform casing for a field', () => {
     const stepSchema = new MultiStepFormStepSchema({
-      step1: {
-        fields: [
-          {
-            name: 'firstName' as const,
-            defaultValue: '',
-            nameTransformCasing: 'camel',
-          },
-        ],
-        title: 'Step 1',
-      },
-      step2: {
-        fields: [
-          {
-            name: 'lastName' as const,
-            defaultValue: '',
-          },
-        ],
-        title: 'Step 2',
+      steps: {
+        step1: {
+          fields: [
+            {
+              name: 'firstName' as const,
+              defaultValue: '',
+              nameTransformCasing: 'camel',
+            },
+          ],
+          title: 'Step 1',
+        },
+        step2: {
+          fields: [
+            {
+              name: 'lastName' as const,
+              defaultValue: '',
+            },
+          ],
+          title: 'Step 2',
+        },
       },
     });
 
