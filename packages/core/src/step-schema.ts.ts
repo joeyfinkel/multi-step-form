@@ -655,7 +655,10 @@ type HelperFnWithoutValidator<
 export type MultiStepFormSchemaStepConfig<
   TStep extends Step<TCasing>,
   TCasing extends CasingType
-> = NameTransformCasingOptions<TCasing> & {
+  > = NameTransformCasingOptions<TCasing> & {
+  /**
+   * The steps that this multi step form will include.
+   */
   steps: InferStepOptions<TStep>;
 };
 
