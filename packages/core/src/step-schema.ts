@@ -517,18 +517,6 @@ type HelperFnChosenSteps<
   | RequireAtLeastOne<{
       [key in ValidStepKey<TSteps>]: true;
     }>;
-type ResolvedHelperFnChosenSteps<
-  TResolvedStep extends AnyResolvedStep,
-  TSteps extends StepNumbers<TResolvedStep>,
-  TChosenSteps extends HelperFnChosenSteps<
-    TResolvedStep,
-    TSteps
-  > = HelperFnChosenSteps<TResolvedStep, TSteps>
-> = TChosenSteps extends object
-  ? keyof TChosenSteps extends ValidStepKey<TSteps>
-    ? keyof TChosenSteps[]
-    : never
-  : TChosenSteps;
 type CreateHelperFunctionOptionsBase<
   TResolvedStep extends AnyResolvedStep,
   TSteps extends StepNumbers<TResolvedStep>,

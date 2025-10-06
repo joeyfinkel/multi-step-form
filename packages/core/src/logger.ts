@@ -104,7 +104,11 @@ export class MultiStepFormLogger {
     message: string,
     options?: BaseLogOptions
   ) {
-    const { includeTimestamp, prefix, logLevelOptions } = options ?? {};
+    const {
+      includeTimestamp = this.includeTimestamp,
+      prefix,
+      logLevelOptions,
+    } = options ?? {};
     const formattedPrefix = this.formatPrefix(prefix);
     const formattedLogLevel = this.wrapValue(
       logLevelOptions?.wrapWith ?? '[]',
