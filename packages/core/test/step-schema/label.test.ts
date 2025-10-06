@@ -8,13 +8,12 @@ describe('multi step form step schema: label', () => {
         step1: {
           title: 'Step 1',
           nameTransformCasing: 'kebab',
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
               label: false,
             },
-          ],
+          },
         },
       },
     });
@@ -28,12 +27,11 @@ describe('multi step form step schema: label', () => {
         step1: {
           title: 'Step 1',
           nameTransformCasing: 'kebab',
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
             },
-          ],
+          },
         },
       },
     });
@@ -49,13 +47,12 @@ describe('multi step form step schema: label', () => {
         step1: {
           title: 'Step 1',
           nameTransformCasing: 'kebab',
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
               label: 'First Name',
             },
-          ],
+          },
         },
       },
     });

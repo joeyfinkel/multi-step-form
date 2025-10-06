@@ -7,12 +7,11 @@ describe('multi step form step schema: name transform casing', () => {
       steps: {
         step1: {
           title: 'Step 1',
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
             },
-          ],
+          },
         },
       },
     });
@@ -29,12 +28,11 @@ describe('multi step form step schema: name transform casing', () => {
         step1: {
           title: 'Step 1',
           nameTransformCasing: 'kebab',
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
             },
-          ],
+          },
         },
       },
     });
@@ -49,22 +47,20 @@ describe('multi step form step schema: name transform casing', () => {
     const stepSchema = new MultiStepFormStepSchema({
       steps: {
         step1: {
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
               nameTransformCasing: 'camel',
             },
-          ],
+          },
           title: 'Step 1',
         },
         step2: {
-          fields: [
-            {
-              name: 'lastName' as const,
+          fields: {
+            lastName: {
               defaultValue: '',
             },
-          ],
+          },
           title: 'Step 2',
         },
       },

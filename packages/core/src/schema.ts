@@ -54,23 +54,21 @@ const t = new MultiStepFormSchema({
   steps: {
     step1: {
       nameTransformCasing: 'kebab',
-      fields: [
-        {
-          defaultValue: '',
-          name: 'first' as const,
-          nameTransformCasing: 'camel',
-        },
-      ],
+      // fields: [
+      //   {
+      //     defaultValue: '',
+      //     name: 'first' as const,
+      //     nameTransformCasing: 'camel',
+      //   },
+      // ],
       title: 'test',
-    },
-    step2: {
-      fields: [
-        {
+      fields: {
+        firstName: {
           defaultValue: '',
-          name: 'last' as const,
+          nameTransformCasing: 'camel',
+          // type: 'date'
         },
-      ],
-      title: 'second',
+      },
     },
   },
 });

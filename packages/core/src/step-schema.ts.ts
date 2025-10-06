@@ -1,14 +1,8 @@
-import {
-  changeCasing,
-  isCasingValid,
-  setCasingType,
-  type CasingType,
-} from './casing';
+import { changeCasing, setCasingType, type CasingType } from './casing';
 import {
   comparePartialArray,
   invariant,
   printErrors,
-  type ArrayElement,
   type Constrain,
   type Expand,
   type Join,
@@ -27,8 +21,6 @@ import {
   type ResolveValidatorOutput,
   type StandardSchemaValidator,
 } from './validators';
-
-type CreateDefaultString<T extends string, Default extends T> = Default;
 
 export type StringFieldType = 'phone' | 'email' | 'time';
 export type NumberFieldType = 'counter';
@@ -52,16 +44,11 @@ export type NameTransformCasingOptions<TCasing extends CasingType> = {
    */
   nameTransformCasing?: Constrain<TCasing, CasingType>;
 };
-export type StepField<
-  Name extends string,
+export type StepFieldOptions<
   Type extends FieldType,
   Casing extends CasingType,
   DefaultValue
 > = NameTransformCasingOptions<Casing> & {
-  /**
-   * The name of the field.
-   */
-  name: Name;
   defaultValue: DefaultValue;
   /**
    * The type of the field.
@@ -89,20 +76,27 @@ export type StepField<
    */
   label?: string | false;
 };
-
+export type AnyStepFieldOption = StepFieldOptions<
+  FieldType,
+  CasingType,
+  unknown
+>;
+export type AnyStepField = Record<string, AnyStepFieldOption>;
 export type StepOptions<
   Casing extends CasingType = CasingType,
-  Field extends StepField<string, FieldType, CasingType, unknown> = StepField<
-    string,
-    FieldType,
-    CasingType,
-    unknown
-  >,
+  // Field extends StepFieldOptions<
+  //   string,
+  //   FieldType,
+  //   CasingType,
+  //   unknown
+  // > = StepFieldOptions<string, FieldType, CasingType, unknown>,
+  TStepField extends AnyStepField = AnyStepField,
   FieldValidator = unknown
 > = NameTransformCasingOptions<Casing> & {
   title: string;
   description?: string;
-  fields: Array<Field>;
+  fields: TStepField;
+  // fields: Array<Field>;
   /**
    * Validator for the fields.
    */
@@ -113,11 +107,13 @@ export type Step<
   step extends number = number,
   options extends StepOptions<
     TCasing,
-    StepField<string, FieldType, TCasing, unknown>,
+    // StepFieldOptions<string, FieldType, TCasing, unknown>,
+    AnyStepField,
     unknown
   > = StepOptions<
     TCasing,
-    StepField<string, FieldType, TCasing, unknown>,
+    AnyStepField,
+    // StepFieldOptions<string, FieldType, TCasing, unknown>,
     unknown
   >
 > = Record<ValidStepKey<step>, options>;
@@ -126,16 +122,10 @@ type GetFieldsForStep<
   Steps extends InferStepOptions<any>,
   Key extends keyof Steps
 > = Steps[Key] extends {
-  fields: infer fields extends Array<
-    StepField<string, FieldType, CasingType, unknown>
-  >;
+  fields: infer fields extends AnyStepField;
 }
-  ? fields[number]
+  ? fields
   : never;
-type GetFieldNames<
-  InferredSteps extends InferStepOptions<any>,
-  Key extends keyof InferredSteps
-> = GetFieldsForStep<InferredSteps, Key>['name'];
 type GetDefaultCasingTransformation<
   Step extends InferStepOptions<any>,
   Key extends keyof Step,
@@ -146,15 +136,16 @@ type GetDefaultCasingTransformation<
 
 type ResolvedFields<
   TInferredSteps extends InferStepOptions<any>,
-  TKey extends keyof TInferredSteps
+  TKey extends keyof TInferredSteps,
+  TFields extends GetFieldsForStep<TInferredSteps, TKey> = GetFieldsForStep<
+    TInferredSteps,
+    TKey
+  >
 > = {
-  [name in GetFieldNames<TInferredSteps, TKey>]: Expand<
+  [name in keyof TFields]: Expand<
     // current field information for the `name`
     SetDefault<
-      Omit<
-        Extract<GetFieldsForStep<TInferredSteps, TKey>, { name: name }>,
-        'name'
-      >,
+      TFields[name],
       {
         type: DefaultFieldType;
         nameTransformCasing: GetDefaultCasingTransformation<
@@ -410,7 +401,13 @@ type ExtractStepFromKey<T extends string> = T extends ValidStepKey<infer N>
 export type InferStepOptions<T> = T extends {
   [K in keyof T extends ValidStepKey ? keyof T : never]: StepOptions<
     infer _casing extends CasingType,
-    infer _stepField extends StepField<string, FieldType, CasingType, unknown>,
+    // infer _stepField extends StepFieldOptions<
+    //   string,
+    //   FieldType,
+    //   CasingType,
+    //   unknown
+    // >,
+    infer _stepField extends AnyStepField,
     infer _fieldValidator
   >;
 }
@@ -596,6 +593,7 @@ type HelperFnCtx<
     ? {
         -readonly [key in keyof TChosenSteps]: GetCurrentStep<
           TResolvedStep,
+          // @ts-ignore
           ExtractStepFromKey<key>
         >;
       }
@@ -603,6 +601,7 @@ type HelperFnCtx<
     ? {
         [key in TChosenSteps[number]]: GetCurrentStep<
           TResolvedStep,
+          // @ts-ignore
           ExtractStepFromKey<key>
         >;
       }
@@ -674,6 +673,7 @@ export const DEFAULT_FIELD_TYPE: SetDefaultString<FieldType, 'string'> =
  * Available transformation types for the step numbers.
  */
 const AS_TYPES = ['string', 'number', 'array.string'] as const;
+export const VALIDATED_STEP_REGEX = /^step\d+$/i;
 
 function createFieldLabel(
   label: string | false | undefined,
@@ -681,6 +681,165 @@ function createFieldLabel(
   casingType: CasingType
 ) {
   return label ?? changeCasing(fieldName, casingType);
+}
+
+function createStepFields(options: {
+  fields: AnyStepField;
+  validateFields:
+    | Constrain<unknown, AnyValidator, DefaultValidator>
+    | undefined;
+  defaultCasing: CasingType;
+}) {
+  const resolvedFields: Record<string, unknown> = {};
+  const { fields, defaultCasing, validateFields } = options;
+
+  for (const [name, values] of Object.entries(fields)) {
+    invariant(
+      typeof name === 'string',
+      `Each key for the "fields" option must be a string. Key ${name} was a ${typeof name}`
+    );
+    invariant(
+      typeof values === 'object',
+      `The value for key ${name} must be an object. Was ${typeof values}`
+    );
+
+    const {
+      defaultValue,
+      label,
+      nameTransformCasing,
+      type = DEFAULT_FIELD_TYPE,
+    } = values;
+
+    if (validateFields) {
+      resolvedFields[name] = defaultValue;
+    } else {
+      const casing = nameTransformCasing ?? defaultCasing;
+
+      resolvedFields[name] = {
+        ...(resolvedFields[name] as Record<string, unknown>),
+        nameTransformCasing: casing,
+        type,
+        defaultValue,
+        label: createFieldLabel(label, name, casing),
+
+        // TODO add more fields here
+      };
+    }
+  }
+
+  if (validateFields) {
+    const validatedFields = runStandardValidation(
+      validateFields as StandardSchemaValidator,
+      resolvedFields
+    );
+
+    invariant(
+      typeof validatedFields === 'object',
+      `The result of the validated fields must be an object, was (${typeof validatedFields}). This is probably an internal error, so open up an issue about it`
+    );
+    invariant(
+      !!validatedFields,
+      'The result of the validated fields must be defined. This is probably an internal error, so open up an issue about it'
+    );
+
+    for (const [name, defaultValue] of Object.entries(validatedFields)) {
+      const currentField = fields[name];
+
+      invariant(
+        currentField,
+        `No field found in the fields config for "${name}"`
+      );
+
+      const {
+        label,
+        type = DEFAULT_FIELD_TYPE,
+        nameTransformCasing,
+      } = currentField;
+      const casing = nameTransformCasing ?? defaultCasing;
+
+      resolvedFields[name] = {
+        ...(resolvedFields[name] as Record<string, unknown>),
+        nameTransformCasing: casing,
+        type,
+        defaultValue,
+        label: createFieldLabel(label, name, casing),
+      };
+    }
+  }
+
+  return resolvedFields;
+}
+
+export function createStep<
+  step extends Step<casing>,
+  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
+  casing extends CasingType = DefaultCasing
+>(stepsConfig: InferStepOptions<step>) {
+  const resolvedSteps = {} as resolvedStep;
+
+  invariant(!!stepsConfig, 'The steps config must be defined', TypeError);
+  invariant(
+    typeof stepsConfig === 'object',
+    `The steps config must be an object, was (${typeof stepsConfig})`,
+    TypeError
+  );
+
+  for (const [stepKey, stepValue] of Object.entries(stepsConfig)) {
+    invariant(
+      typeof stepKey === 'string',
+      `Each key for the step config must be a string. Key "${stepKey}" was ${typeof stepKey} `,
+      TypeError
+    );
+    invariant(
+      VALIDATED_STEP_REGEX.test(stepKey),
+      `The key "${stepKey}" isn't formatted properly. Each key in the step config must be the following format: "step{number}"`
+    );
+
+    const validStepKey = stepKey as keyof resolvedStep;
+    const {
+      fields,
+      title,
+      nameTransformCasing: defaultCasing = DEFAULT_CASING,
+      description,
+      validateFields,
+    } = stepValue;
+
+    const currentStep = validStepKey.toString().replace('step', '');
+
+    invariant(
+      fields,
+      `Missing fields for step ${currentStep} (${String(validStepKey)})`,
+      TypeError
+    );
+    invariant(
+      typeof fields === 'object',
+      'Fields must be an object',
+      TypeError
+    );
+    invariant(
+      Object.keys(fields).length > 0,
+      `The fields config for step ${currentStep} (${String(
+        validStepKey
+      )}) is empty. Please add a field`
+    );
+
+    const resolvedFields = createStepFields({
+      defaultCasing,
+      fields,
+      validateFields,
+    });
+
+    resolvedSteps[validStepKey] = {
+      ...resolvedSteps[validStepKey],
+      title,
+      nameTransformCasing: defaultCasing,
+      // Only add the description if it's defined
+      ...(typeof description === 'string' ? { description } : {}),
+      fields: resolvedFields,
+    };
+  }
+
+  return resolvedSteps;
 }
 
 export class MultiStepFormStepSchema<
@@ -695,7 +854,7 @@ export class MultiStepFormStepSchema<
    */
   readonly original: InferStepOptions<step>;
   readonly value: resolvedStep;
-  readonly validStepRegex = /^step\d+$/i;
+  // readonly validStepRegex = /^step\d+$/i;
   steps: {
     first: FirstStep<resolvedStep>;
     last: LastStep<resolvedStep>;
@@ -720,7 +879,7 @@ export class MultiStepFormStepSchema<
     ) as casing;
 
     this.original = steps;
-    this.value = this.createStep(this.original);
+    this.value = createStep<step, resolvedStep, casing>(this.original);
 
     // Add the update function to each step
     for (const [stepKey, stepValue] of Object.entries(this.value)) {
@@ -781,157 +940,6 @@ export class MultiStepFormStepSchema<
     invariant(/^\d+$/.test(extracted), `Invalid step format: "${input}"`);
 
     return parseInt(extracted, 10);
-  }
-
-  private createStepFields(options: {
-    fields: StepField<string, FieldType, CasingType, unknown>[];
-    validateFields:
-      | Constrain<unknown, AnyValidator, DefaultValidator>
-      | undefined;
-    defaultCasing: CasingType;
-  }) {
-    const resolvedFields: Record<string, unknown> = {};
-    const { fields, defaultCasing, validateFields } = options;
-
-    for (let i = 0; i < fields.length; i++) {
-      const field = fields[i];
-
-      invariant(field, `Missing field config at index ${i} of "fields"`);
-      invariant(
-        typeof field === 'object',
-        `Field config at index ${i} must be an object, was (${typeof field})`
-      );
-
-      const {
-        defaultValue,
-        name,
-        label,
-        nameTransformCasing,
-        type = DEFAULT_FIELD_TYPE,
-      } = field;
-
-      if (validateFields) {
-        resolvedFields[name] = defaultValue;
-      } else {
-        const casing = nameTransformCasing ?? defaultCasing;
-
-        resolvedFields[name] = {
-          ...(resolvedFields[name] as Record<string, unknown>),
-          nameTransformCasing: casing,
-          type,
-          defaultValue,
-          label: createFieldLabel(label, name, casing),
-
-          // TODO add more fields here
-        };
-      }
-    }
-
-    if (validateFields) {
-      const validatedFields = runStandardValidation(
-        validateFields as StandardSchemaValidator,
-        resolvedFields
-      );
-
-      invariant(
-        typeof validatedFields === 'object',
-        `The result of the validated fields must be an object, was (${typeof validatedFields}). This is probably an internal error, so open up an issue about it`
-      );
-      invariant(
-        !!validatedFields,
-        'The result of the validated fields must be defined. This is probably an internal error, so open up an issue about it'
-      );
-
-      for (const [name, defaultValue] of Object.entries(validatedFields)) {
-        const currentField = fields.find((field) => field.name === name);
-
-        invariant(
-          currentField,
-          `No field found in the fields config for "${name}"`
-        );
-
-        const {
-          label,
-          type = DEFAULT_FIELD_TYPE,
-          nameTransformCasing,
-        } = currentField;
-        const casing = nameTransformCasing ?? defaultCasing;
-
-        resolvedFields[name] = {
-          ...(resolvedFields[name] as Record<string, unknown>),
-          nameTransformCasing: casing,
-          type,
-          defaultValue,
-          label: createFieldLabel(label, name, casing),
-        };
-      }
-    }
-
-    return resolvedFields;
-  }
-
-  private createStep(stepsConfig: InferStepOptions<step>) {
-    const resolvedSteps = {} as resolvedStep;
-
-    invariant(!!stepsConfig, 'The steps config must be defined', TypeError);
-    invariant(
-      typeof stepsConfig === 'object',
-      `The steps config must be an object, was (${typeof stepsConfig})`,
-      TypeError
-    );
-
-    for (const [stepKey, stepValue] of Object.entries(stepsConfig)) {
-      invariant(
-        typeof stepKey === 'string',
-        `Each key for the step config must be a string. Key "${stepKey}" was ${typeof stepKey} `,
-        TypeError
-      );
-      invariant(
-        this.validStepRegex.test(stepKey),
-        `The key "${stepKey}" isn't formatted properly. Each key in the step config must be the following format: "step{number}"`
-      );
-
-      const validStepKey = stepKey as keyof ResolvedStep<step>;
-      const {
-        fields,
-        title,
-        nameTransformCasing: defaultCasing = DEFAULT_CASING,
-        description,
-        validateFields,
-      } = stepValue;
-
-      const currentStep = validStepKey.toString().replace('step', '');
-
-      invariant(
-        fields,
-        `Missing fields for step ${currentStep} (${String(validStepKey)})`,
-        TypeError
-      );
-      invariant(Array.isArray(fields), 'Fields must be an array', TypeError);
-      invariant(
-        fields.length > 0,
-        `The fields config for step ${currentStep} (${String(
-          validStepKey
-        )}) is empty. Please add a field`
-      );
-
-      const resolvedFields = this.createStepFields({
-        defaultCasing,
-        fields,
-        validateFields,
-      });
-
-      resolvedSteps[validStepKey] = {
-        ...resolvedSteps[validStepKey],
-        title,
-        nameTransformCasing: defaultCasing,
-        // Only add the description if it's defined
-        ...(typeof description === 'string' ? { description } : {}),
-        fields: resolvedFields,
-      };
-    }
-
-    return resolvedSteps;
   }
 
   /**

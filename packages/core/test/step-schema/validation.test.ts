@@ -8,16 +8,14 @@ describe('multi step form step schema: field validation', () => {
       steps: {
         step1: {
           title: 'Validated Step 1',
-          fields: [
-            {
-              name: 'firstName' as const,
+          fields: {
+            firstName: {
               defaultValue: '',
             },
-            {
-              name: 'lastName' as const,
+            lastName: {
               defaultValue: '',
             },
-          ],
+          },
           validateFields: type({
             firstName: 'string',
             lastName: 'string',
@@ -57,16 +55,14 @@ describe('multi step form step schema: field validation', () => {
           steps: {
             step1: {
               title: 'Validated Step 1',
-              fields: [
-                {
-                  name: 'firstName' as const,
+              fields: {
+                firstName: {
                   defaultValue: '',
                 },
-                {
-                  name: 'lastName' as const,
+                lastName: {
                   defaultValue: '',
                 },
-              ],
+              },
               validateFields: type({
                 fName: 'string',
                 lName: 'string',

@@ -8,32 +8,29 @@ describe('multi step form step schema: reusable functions', () => {
       const stepSchema = new MultiStepFormStepSchema({
         steps: {
           step1: {
-            fields: [
-              {
-                name: 'firstName' as const,
+            fields: {
+              firstName: {
                 defaultValue: '',
                 nameTransformCasing: 'camel',
               },
-            ],
+            },
             title: 'Step 1',
           },
           step2: {
-            fields: [
-              {
-                name: 'lastName' as const,
+            fields: {
+              lastName: {
                 defaultValue: '',
               },
-            ],
+            },
             title: 'Step 2',
           },
           step3: {
             title: 'Step 3',
-            fields: [
-              {
-                name: 'age' as const,
+            fields: {
+              age: {
                 defaultValue: 25,
               },
-            ],
+            },
           },
         },
       });
@@ -51,32 +48,29 @@ describe('multi step form step schema: reusable functions', () => {
       const stepSchema = new MultiStepFormStepSchema({
         steps: {
           step1: {
-            fields: [
-              {
-                name: 'firstName' as const,
+            fields: {
+              firstName: {
                 defaultValue: '',
                 nameTransformCasing: 'camel',
               },
-            ],
+            },
             title: 'Step 1',
           },
           step2: {
-            fields: [
-              {
-                name: 'lastName' as const,
+            fields: {
+              lastName: {
                 defaultValue: '',
               },
-            ],
+            },
             title: 'Step 2',
           },
           step3: {
             title: 'Step 3',
-            fields: [
-              {
-                name: 'age' as const,
+            fields: {
+              age: {
                 defaultValue: 25,
               },
-            ],
+            },
           },
         },
       });
@@ -94,32 +88,29 @@ describe('multi step form step schema: reusable functions', () => {
         const stepSchema = new MultiStepFormStepSchema({
           steps: {
             step1: {
-              fields: [
-                {
-                  name: 'firstName' as const,
+              fields: {
+                firstName: {
                   defaultValue: '',
                   nameTransformCasing: 'camel',
                 },
-              ],
+              },
               title: 'Step 1',
             },
             step2: {
-              fields: [
-                {
-                  name: 'lastName' as const,
+              fields: {
+                lastName: {
                   defaultValue: '',
                 },
-              ],
+              },
               title: 'Step 2',
             },
             step3: {
               title: 'Step 3',
-              fields: [
-                {
-                  name: 'age' as const,
+              fields: {
+                age: {
                   defaultValue: 25,
                 },
-              ],
+              },
             },
           },
         });
@@ -137,32 +128,29 @@ describe('multi step form step schema: reusable functions', () => {
         const stepSchema = new MultiStepFormStepSchema({
           steps: {
             step1: {
-              fields: [
-                {
-                  name: 'firstName' as const,
+              fields: {
+                firstName: {
                   defaultValue: '',
                   nameTransformCasing: 'camel',
                 },
-              ],
+              },
               title: 'Step 1',
             },
             step2: {
-              fields: [
-                {
-                  name: 'lastName' as const,
+              fields: {
+                lastName: {
                   defaultValue: '',
                 },
-              ],
+              },
               title: 'Step 2',
             },
             step3: {
               title: 'Step 3',
-              fields: [
-                {
-                  name: 'age' as const,
+              fields: {
+                age: {
                   defaultValue: 25,
                 },
-              ],
+              },
             },
           },
         });
@@ -189,32 +177,29 @@ describe('multi step form step schema: reusable functions', () => {
         const stepSchema = new MultiStepFormStepSchema({
           steps: {
             step1: {
-              fields: [
-                {
-                  name: 'firstName' as const,
+              fields: {
+                firstName: {
                   defaultValue: '',
                   nameTransformCasing: 'camel',
                 },
-              ],
+              },
               title: 'Step 1',
             },
             step2: {
-              fields: [
-                {
-                  name: 'lastName' as const,
+              fields: {
+                lastName: {
                   defaultValue: '',
                 },
-              ],
+              },
               title: 'Step 2',
             },
             step3: {
               title: 'Step 3',
-              fields: [
-                {
-                  name: 'age' as const,
+              fields: {
+                age: {
                   defaultValue: 25,
                 },
-              ],
+              },
             },
           },
         });
@@ -236,32 +221,29 @@ describe('multi step form step schema: reusable functions', () => {
         const stepSchema = new MultiStepFormStepSchema({
           steps: {
             step1: {
-              fields: [
-                {
-                  name: 'firstName' as const,
+              fields: {
+                firstName: {
                   defaultValue: '',
                   nameTransformCasing: 'camel',
                 },
-              ],
+              },
               title: 'Step 1',
             },
             step2: {
-              fields: [
-                {
-                  name: 'lastName' as const,
+              fields: {
+                lastName: {
                   defaultValue: '',
                 },
-              ],
+              },
               title: 'Step 2',
             },
             step3: {
               title: 'Step 3',
-              fields: [
-                {
-                  name: 'age' as const,
+              fields: {
+                age: {
                   defaultValue: 25,
                 },
-              ],
+              },
             },
           },
         });
