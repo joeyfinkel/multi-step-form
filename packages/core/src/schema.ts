@@ -8,7 +8,7 @@ import {
   type ResolvedStep,
   type Step,
   type StepNumbers,
-} from './step-schema.ts';
+} from './step-schema.js';
 import { MultiStepFormStorage } from './storage.js';
 import { Subscribable } from './subscribable.js';
 import type { Constrain } from './utils.js';

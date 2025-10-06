@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MultiStepFormStepSchema } from '../../src/step-schema.ts.ts';
+import { MultiStepFormStepSchema } from '../../src/';
 
 describe('multi step form step schema', () => {
   it('should create a valid step schema', () => {
