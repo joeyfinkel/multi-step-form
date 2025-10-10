@@ -26,6 +26,8 @@
   },
   "dependencies": {
     "@multi-step-form/core": "workspace:*",
-    "@multi-step-form/shared-utils": "workspace:*"
+    "@multi-step-form/shared-utils": "workspace:*",
+    "@multi-step-form/casing": "workspace:*",
+    "@multi-step-form/compile-time-utils": "workspace:*"
   }
 }

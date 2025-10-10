@@ -1,18 +1,18 @@
-import {
-  MultiStepFormStepSchema as MultiStepFormStepSchemaBase,
-  type CasingType,
-  type Constrain,
-  type DefaultCasing,
-  type HelperFnChosenSteps,
-  type InferStepOptions,
-  type MultiStepFormSchemaStepConfig,
-  type ResolvedStep,
-  type Step,
-  type StepNumbers,
-  type CreateHelperFunctionOptionsBase,
-  type HelperFnInputBase,
-  type AnyResolvedStep,
-} from '@multi-step-form/core';
+import type { casing } from '@multi-step-form/casing';
+import type { types } from '@multi-step-form/compile-time-utils';
+import { MultiStepFormStepSchema as MultiStepFormStepSchemaBase } from '@multi-step-form/core';
+import type {
+  AnyResolvedStep,
+  CreateHelperFunctionOptionsBase,
+  DefaultCasing,
+  HelperFnChosenSteps,
+  HelperFnInputBase,
+  InferStepOptions,
+  MultiStepFormSchemaStepConfig,
+  ResolvedStep,
+  Step,
+  StepNumbers,
+} from '@multi-step-form/shared-utils';
 import type { ReactNode } from 'react';
 
 export type CreateComponentCallback<
@@ -31,7 +31,7 @@ export interface HelperFunctions<
   TStep extends Step<TCasing>,
   TResolvedStep extends ResolvedStep<TStep, InferStepOptions<TStep>, TCasing>,
   TSteps extends StepNumbers<TResolvedStep>,
-  TCasing extends CasingType
+  TCasing extends casing.CasingType
 > {
   createComponent<
     chosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>,
@@ -50,13 +50,13 @@ export class MultiStepFormStepSchema<
     step extends Step<casing>,
     resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
     stepNumbers extends StepNumbers<resolvedStep>,
-    casing extends CasingType = DefaultCasing
+    casing extends casing.CasingType = DefaultCasing
   >
   extends MultiStepFormStepSchemaBase<step, resolvedStep, stepNumbers, casing>
   implements HelperFunctions<step, resolvedStep, stepNumbers, casing>
 {
   constructor(
-    config: MultiStepFormSchemaStepConfig<step, Constrain<casing, CasingType>>
+    config: MultiStepFormSchemaStepConfig<step, types.Constrain<casing, casing.CasingType>>
   ) {
     super(config);
   }
@@ -73,7 +73,7 @@ export class MultiStepFormStepSchema<
     fn: CreateComponentCallback<resolvedStep, stepNumbers, chosenSteps, props>
   ): CreatedMultiStepFormComponent<props> {
     const { stepData } = options;
-    const ctx = this.createStepHelperCtx(stepData);
+    const ctx = this.stepHelper.createCtx(stepData);
 
     return ((props?: props) => fn({ ctx }, props as any)) as any;
   }

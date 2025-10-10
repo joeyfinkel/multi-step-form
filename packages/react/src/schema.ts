@@ -1,7 +1,5 @@
 import {
   MultiStepFormSchema as MultiStepFormSchemaBase,
-  type CasingType,
-  type Constrain,
   type MultiStepFormSchemaOptions,
 } from '@multi-step-form/core';
 import type {
@@ -9,13 +7,22 @@ import type {
   CreatedMultiStepFormComponent,
   HelperFunctions,
 } from './step-schema';
-import type { CreateHelperFunctionOptionsBase, HelperFnChosenSteps, InferStepOptions, ResolvedStep, Step, StepNumbers } from '@multi-step-form/shared-utils';
+import type {
+  CreateHelperFunctionOptionsBase,
+  HelperFnChosenSteps,
+  InferStepOptions,
+  ResolvedStep,
+  Step,
+  StepNumbers,
+} from '@multi-step-form/shared-utils';
+import type { types } from '@multi-step-form/compile-time-utils';
+import type { casing } from '@multi-step-form/casing';
 
 export class MultiStepFormSchema<
     step extends Step<casing>,
     resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
     stepNumbers extends StepNumbers<resolvedStep>,
-    casing extends CasingType,
+    casing extends casing.CasingType,
     storageKey extends string
   >
   extends MultiStepFormSchemaBase<
@@ -30,7 +37,7 @@ export class MultiStepFormSchema<
   constructor(
     config: MultiStepFormSchemaOptions<
       step,
-      Constrain<casing, CasingType>,
+      types.Constrain<casing, casing.CasingType>,
       storageKey
     >
   ) {

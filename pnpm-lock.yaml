@@ -158,6 +158,12 @@ importers:
 
   packages/react:
     dependencies:
+      '@multi-step-form/casing':
+        specifier: workspace:*
+        version: link:../casing
+      '@multi-step-form/compile-time-utils':
+        specifier: workspace:*
+        version: link:../compile-time-utils
       '@multi-step-form/core':
         specifier: workspace:*
         version: link:../core
