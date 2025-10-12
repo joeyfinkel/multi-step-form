@@ -47,6 +47,7 @@ export class MultiStepFormSchema<
   ) {
     super(config);
 
+    // @ts-ignore
     this.stepSchema = new MultiStepFormStepSchema({
       steps: config.steps,
       nameTransformCasing:
@@ -93,17 +94,3 @@ export function createMultiStepFormSchema<
     storageKey
   >(options);
 }
-const t = createMultiStepFormSchema({
-  steps: {
-    step1: {
-      title: 'Step 1',
-      nameTransformCasing: 'kebab',
-      fields: {
-        firstName: {
-          defaultValue: '',
-          label: false,
-        },
-      },
-    },
-  },
-});

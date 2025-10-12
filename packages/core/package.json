@@ -2,15 +2,22 @@
   "name": "@multi-step-form/core",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.umd.js"
+    }
+  },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "dev": "vite",
+    "build": "vite build",
     "test": "vitest"
   },
   "keywords": [],
@@ -20,10 +27,10 @@
   "devDependencies": {
     "vite": "^7.1.5",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "arktype": "^2.1.22"
   },
   "dependencies": {
-    "arktype": "^2.1.22",
     "@multi-step-form/shared-utils": "workspace:*",
     "@multi-step-form/casing": "workspace:*",
     "@multi-step-form/compile-time-utils": "workspace:*",

@@ -7,9 +7,11 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'MultiStepFormCasing',
-      fileName: 'multi-step-form-casing',
+      fileName: 'index',
     },
   },
+  resolve: {
+    preserveSymlinks: true,
+  },
   plugins: [dts()],
-
 });

@@ -9,8 +9,11 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'MultiStepFormCore',
-      fileName: 'multi-step-form-core',
+      fileName: 'index',
     },
+  },
+  resolve: {
+    preserveSymlinks: true,
   },
   plugins: [dts()],
   test: {

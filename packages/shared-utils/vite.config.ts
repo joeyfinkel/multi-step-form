@@ -9,10 +9,13 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'MultiStepFormSharedUtils',
-      fileName: 'multi-step-form-shared-utils',
+      fileName: 'index',
     },
   },
   plugins: [dts()],
+  resolve: {
+    preserveSymlinks: true,
+  },
   test: {
     globals: true,
   },

@@ -7,11 +7,11 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'MultiStepFormReact',
-      fileName: 'multi-step-form-react',
+      fileName: 'index',
     },
   },
-  plugins: [dts()],
-  test: {
-    globals: true,
+  resolve: {
+    preserveSymlinks: true,
   },
+  plugins: [dts()],
 });

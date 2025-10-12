@@ -4,7 +4,6 @@ import {
   createStep,
   MultiStepFormStepSchema as MultiStepFormStepSchemaBase,
 } from '@multi-step-form/core';
-import type { CasingType } from '@multi-step-form/core/dist/internals';
 import type {
   AnyResolvedStep,
   CreateHelperFunctionOptionsBase,
@@ -71,7 +70,7 @@ export type CreateComponentFn<
 export type ResolvedStep<
   TStep extends Step<TDefaultCasing>,
   TInferredSteps extends InferStepOptions<TStep> = InferStepOptions<TStep>,
-  TDefaultCasing extends CasingType = DefaultCasing,
+  TDefaultCasing extends casing.CasingType = DefaultCasing,
   TResolvedStep extends ResolvedStepBuilder<
     TStep,
     TInferredSteps,

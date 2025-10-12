@@ -7,7 +7,7 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'MultiStepFormCompileTimeUtils',
-      fileName: 'multi-step-form-compile-time-utils',
+      fileName: 'index',
     },
   },
   plugins: [dts()],
