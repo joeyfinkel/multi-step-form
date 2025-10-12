@@ -368,8 +368,9 @@ export type ResolvedStep<
     TStep,
     TInferredSteps,
     TDefaultCasing
-  > = ResolvedStepBuilder<TStep, TInferredSteps, TDefaultCasing>
-> = {
+  > = ResolvedStepBuilder<TStep, TInferredSteps, TDefaultCasing>,
+  TAdditionalStepProps extends object = {}
+> = TAdditionalStepProps & {
   [stepKey in keyof TResolvedStep]: TResolvedStep[stepKey] & {
     update: UpdateStepFn<
       // @ts-ignore
@@ -704,7 +705,7 @@ export namespace step {
     resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
     stepNumbers extends StepNumbers<resolvedStep>,
     casing extends CasingType
-    >(resolvedStepValues: resolvedStep) {
+  >(resolvedStepValues: resolvedStep) {
     /**
      * Gets the step data associated with the target step number.
      *

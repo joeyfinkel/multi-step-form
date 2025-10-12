@@ -9,7 +9,7 @@ import {
 } from '@multi-step-form/shared-utils';
 import { MultiStepFormStorage } from './storage.js';
 import { Subscribable } from './subscribable.js';
-import {  MultiStepFormStepSchema } from './step-schema.js';
+import { MultiStepFormStepSchema } from './step-schema.js';
 import { casing } from '@multi-step-form/casing';
 import type { types } from '@multi-step-form/compile-time-utils';
 import type { CasingType } from './internals.js';

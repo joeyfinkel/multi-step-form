@@ -303,6 +303,9 @@ export class MultiStepFormStepSchema<
    * The original config before any validation or transformations have been applied.
    */
   readonly original: InferStepOptions<step>;
+  /**
+   * The resolved step values.
+   */
   value: resolvedStep;
   /**
    * Gets the step data for the target step.
@@ -347,17 +350,7 @@ export class MultiStepFormStepSchema<
       this.stepNumbers as Array<stepNumbers>
     );
 
-    // Add the update function to each step
-    for (const [stepKey, stepValue] of Object.entries(this.value)) {
-      const step = parseInt(stepKey.replace('step', '')) as stepNumbers;
-
-      this.value[stepKey as keyof resolvedStep] = {
-        // Cast here since we know that `this.value` is already validated
-        ...(stepValue as object),
-        update: this.createStepUpdaterFn(step),
-        createHelperFn: this.createStepHelperFn(step),
-      } as any;
-    }
+    this.value = this.enrichValues(this.value);
 
     this.firstStep = this.first();
     this.lastStep = this.last();
@@ -392,19 +385,6 @@ export class MultiStepFormStepSchema<
     };
   }
 
-  // private extractNumberFromStep(input: string) {
-  //   invariant(
-  //     input.includes('step'),
-  //     "Can't extract a valid step number since"
-  //   );
-
-  //   const extracted = input.replace('step', '');
-
-  //   invariant(/^\d+$/.test(extracted), `Invalid step format: "${input}"`);
-
-  //   return parseInt(extracted, 10);
-  // }
-
   getSnapshot() {
     return this;
   }
@@ -418,6 +398,27 @@ export class MultiStepFormStepSchema<
         value: this.value,
       });
     });
+  }
+
+  protected enrichValues<
+    values extends AnyResolvedStep,
+    additionalProps extends object
+  >(values: values, additionalProps?: (step: number) => additionalProps) {
+    for (const [key, stepValue] of Object.entries(values)) {
+      const step = parseInt(key.replace('step', '')) as stepNumbers;
+
+      values = {
+        ...values,
+        [key as keyof resolvedStep]: {
+          ...(stepValue as object),
+          update: this.createStepUpdaterFn(step),
+          createHelperFn: this.createStepHelperFn(step),
+          ...(additionalProps?.(step) ?? {}),
+        },
+      };
+    }
+
+    return values;
   }
 
   /**
