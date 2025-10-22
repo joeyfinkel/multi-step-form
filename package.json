@@ -4,6 +4,9 @@
   "description": "A type-safe multi step form solution.",
   "type": "module",
   "scripts": {
+    "setup:all": "pnpm i && pnpm -r build",
+    "setup:packages": "pnpm i && pnpm --filter './packages/*' -r build",
+    "watch": "pnpm -r run watch",
     "build": "pnpm -r build",
     "dev": "pnpm -r dev",
     "test": "pnpm -r test"
@@ -14,6 +17,7 @@
   "packageManager": "pnpm@10.18.2",
   "devDependencies": {
     "@types/node": "^24.5.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vite": "^7.1.11"
   }
 }
