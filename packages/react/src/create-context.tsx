@@ -1,78 +1,34 @@
-import { type casing } from '@multi-step-form/casing';
-import type { types } from '@multi-step-form/compile-time-utils';
-import { type MultiStepFormSchemaOptions } from '@multi-step-form/core';
-import { invariant } from '@multi-step-form/runtime-utils';
+import { MultiStepFormStepSchema } from '@multi-step-form/core';
+import { type ComponentProps, type ReactNode } from 'react';
+import {
+  createMultiStepFormDataHook,
+  throwIfInvalidStepNumber,
+  UseMultiStepFormData,
+} from './hooks/use-multi-step-form-data';
+import {
+  MultiStepFormSchema,
+  type AnyMultiStepFormSchema
+} from './schema';
 import type {
-  DefaultCasing,
-  GetCurrentStep,
-  InferStepOptions,
-  Step,
-  StepNumbers,
-} from '@multi-step-form/shared-utils';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-  type ComponentProps,
-  type ReactNode,
-} from 'react';
-import type { JSX } from 'react/jsx-runtime';
-import { createMultiStepFormSchema, MultiStepFormSchema } from './schema';
-import {
-  MultiStepFormStepSchema,
-  type CreatedMultiStepFormComponent,
-  type CreateFunction,
-  type ResolvedStep,
+  CreatedMultiStepFormComponent,
+  CreateFunction,
 } from './step-schema';
-import { MultiStepFormObserver } from './observable';
 
-export type UseMultiStepFormData<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType,
-  storageKey extends string,
-  schema extends MultiStepFormSchema<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  > = MultiStepFormSchema<step, resolvedStep, stepNumbers, casing, storageKey>
-> = {
-  /**
-   * Returns the entire {@linkcode MultiStepFormSchema instance}.
-   */
-  (): schema;
-  /**
-   * Returns the data for the target step.
-   * @param stepNumber The step number to return.
-   * @throws {TypeError} If `options.stepNumber` is invalid.
-   */
-  <stepNumber extends stepNumbers>(options: {
-    stepNumber: stepNumber;
-  }): GetCurrentStep<resolvedStep, stepNumber>;
-  /**
-   * Returns the specified data from the {@linkcode MultiStepFormSchema} instance via the callback's return.
-   */
-  <data>(selector: (schema: schema) => data): data;
-};
-
-export type UseCurrentStepOptions<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType,
-  stepNumber extends stepNumbers,
-  props,
-  isDataGuaranteed extends boolean = false
+type BaseOptions<
+  TSchema extends AnyMultiStepFormSchema,
+  TTargetStep extends keyof MultiStepFormSchema.resolvedStep<TSchema>
 > = {
   /**
    * The step to return data from.
    */
-  stepNumber: stepNumber;
+  targetStep: TTargetStep;
+};
+export type UseCurrentStepOptions<
+  TSchema extends AnyMultiStepFormSchema,
+  TTargetStep extends keyof MultiStepFormSchema.resolvedStep<TSchema>,
+  props,
+  isDataGuaranteed extends boolean = false
+> = BaseOptions<TSchema, TTargetStep> & {
   /**
    * Determines if the result should follow "strictness".
    * The result will change based on the value for this option.
@@ -116,7 +72,7 @@ export type UseCurrentStepOptions<
    * An optional transformation function to provide a custom not found message.
    */
   notFoundMessage?: CreateFunction<
-    [ctx: { stepNumber: stepNumber }, props: props],
+    [ctx: BaseOptions<TSchema, TTargetStep>, props: props],
     ReactNode
   >;
 };
@@ -149,41 +105,31 @@ export interface UseCurrentStepSuccessResult<
   hasData: true;
 }
 export type UseCurrentStepResult<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType,
-  stepNumber extends stepNumbers,
+  TSchema extends AnyMultiStepFormSchema,
+  TTargetStep extends keyof MultiStepFormSchema.resolvedStep<TSchema>,
   props,
   isDataGuaranteed extends boolean = false
 > = isDataGuaranteed extends true
   ? Omit<
       UseCurrentStepSuccessResult<
-        GetCurrentStep<resolvedStep, stepNumber>,
+        MultiStepFormSchema.getData<TSchema, TTargetStep>,
         props
       >,
       'hasData'
     >
   :
       | UseCurrentStepErrorResult<
-          GetCurrentStep<resolvedStep, stepNumber>,
+          MultiStepFormSchema.getData<TSchema, TTargetStep>,
           props
         >
       | UseCurrentStepSuccessResult<
-          GetCurrentStep<resolvedStep, stepNumber>,
+          MultiStepFormSchema.getData<TSchema, TTargetStep>,
           props
         >;
 export type UseProgressBaseOptions<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType,
-  stepNumber extends stepNumbers
-> = {
-  /**
-   * The current step of the form.
-   */
-  currentStep: stepNumber;
+  TSchema extends AnyMultiStepFormSchema,
+  TTargetStep extends keyof MultiStepFormSchema.resolvedStep<TSchema>
+> = BaseOptions<TSchema, TTargetStep> & {
   /**
    * The total amount of steps that are in the form.
    *
@@ -198,35 +144,15 @@ export type UseProgressBaseOptions<
   maxProgressValue?: number;
 };
 export type UseProgressOptions<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType,
-  stepNumber extends stepNumbers,
+  TSchema extends AnyMultiStepFormSchema,
+  TTargetStep extends keyof MultiStepFormSchema.resolvedStep<TSchema>,
   props
-> = UseProgressBaseOptions<
-  step,
-  resolvedStep,
-  stepNumbers,
-  casing,
-  stepNumber
-> & {
+> = UseProgressBaseOptions<TSchema, TTargetStep> & {
   /**
    * An optional transformation function to provide a custom progress text.
    */
   progressTextTransformer?: CreateFunction<
-    [
-      ctx: Required<
-        UseProgressBaseOptions<
-          step,
-          resolvedStep,
-          stepNumbers,
-          casing,
-          stepNumbers
-        >
-      >,
-      props
-    ],
+    [ctx: Required<UseProgressBaseOptions<TSchema, TTargetStep>>, props],
     ReactNode
   >;
 };
@@ -251,66 +177,27 @@ export type CreateHOC<TContext, TProps> = (
 ) => CreatedMultiStepFormComponent<TProps>;
 
 export type MultiStepFormContextResult<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType = DefaultCasing,
-  storageKey extends string = 'MultiStepForm',
-  schema extends MultiStepFormSchema<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  > = MultiStepFormSchema<step, resolvedStep, stepNumbers, casing, storageKey>
+  TSchema extends AnyMultiStepFormSchema,
+  TResolvedStep extends MultiStepFormSchema.resolvedStep<TSchema> = MultiStepFormSchema.resolvedStep<TSchema>
 > = {
-  MultiStepFormContext: schema;
-  MultiStepFormProvider: (props: { children: ReactNode }) => JSX.Element;
-  useMultiStepFormSchema: schema;
-  useMultiStepFormData: UseMultiStepFormData<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  >;
+  // MultiStepFormContext: schema;
+  // MultiStepFormProvider: (props: { children: ReactNode }) => JSX.Element;
+  // useMultiStepFormSchema: schema;
+  useMultiStepFormData: UseMultiStepFormData<TSchema>;
   /**
    * Gets the data for the specified step.
    *
    * @returns The data for the given step number.
    */
   useCurrentStepData: <
-    stepNumber extends stepNumbers,
+    targetStep extends keyof TResolvedStep,
     props = undefined,
     isDataGuaranteed extends boolean = false
   >(
-    options: UseCurrentStepOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber,
-      props,
-      isDataGuaranteed
-    >
-  ) => UseCurrentStepResult<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    stepNumber,
-    props,
-    isDataGuaranteed
-  >;
-  useProgress: <stepNumber extends stepNumbers, props = undefined>(
-    options: UseProgressOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber,
-      props
-    >
+    options: UseCurrentStepOptions<TSchema, targetStep, props, isDataGuaranteed>
+  ) => UseCurrentStepResult<TSchema, targetStep, props, isDataGuaranteed>;
+  useProgress: <targetStep extends keyof TResolvedStep, props = undefined>(
+    options: UseProgressOptions<TSchema, targetStep, props>
   ) => UseProgressResult<props>;
   /**
    * A hook that can be used to check if the form can be restarted. If no {@linkcode cb}
@@ -326,57 +213,26 @@ export type MultiStepFormContextResult<
    * @param cb The callback function for creating the HOC.
    * @returns A HOC for the `progressTextTransformer` option of the `useProgress` hook.
    */
-  withProgressText: <stepNumber extends stepNumbers, props = undefined>(
-    options: UseProgressBaseOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber
-    >,
+  withProgressText: <targetStep extends keyof TResolvedStep, props = undefined>(
+    options: UseProgressBaseOptions<TSchema, targetStep>,
     cb: (
-      ctx: Required<
-        UseProgressBaseOptions<
-          step,
-          resolvedStep,
-          stepNumbers,
-          casing,
-          stepNumbers
-        >
-      >,
+      ctx: Required<UseProgressBaseOptions<TSchema, targetStep>>,
       props: props
     ) => ReactNode
-  ) => Exclude<
-    UseProgressOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber,
-      props
-    >['progressTextTransformer'],
-    undefined
-  >;
+  ) => CreatedMultiStepFormComponent<props>;
   /**
    * A HOC for creating a custom not found component for when a step's data is `undefined`.
    * @param options Options for creating the HOC.
    * @param cb The callback function for creating the HOC.
    * @returns A HOC for the `notFoundMessage` option of the `useCurrentStep` hook.
    */
-  withNoStepDataFound: <stepNumber extends stepNumbers, props = undefined>(
-    options: { currentStep: stepNumber },
-    cb: (ctx: { currentStep: stepNumber }, props: props) => ReactNode
-  ) => Exclude<
-    UseCurrentStepOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber,
-      props
-    >['notFoundMessage'],
-    undefined
-  >;
+  withNoStepDataFound: <
+    targetStep extends keyof TResolvedStep,
+    props = undefined
+  >(
+    options: BaseOptions<TSchema, targetStep>,
+    cb: (ctx: BaseOptions<TSchema, targetStep>, props: props) => ReactNode
+  ) => CreatedMultiStepFormComponent<props>;
 };
 
 function createComponent<ctx>(ctx: ctx) {
@@ -390,233 +246,99 @@ function createComponent<ctx>(ctx: ctx) {
  * Create multi step form context with a {@linkcode MultiStepFormSchema} instance.
  * @param schema The {@linkcode MultiStepFormSchema} instance.
  */
+// export function createMultiStepFormContext<
+//   schema extends AnyMultiStepFormSchema
+// >(schema: schema): MultiStepFormContextResult<schema>;
+// /**
+//  * Create multi step form context without a {@linkcode MultiStepFormSchema} instance.
+//  *
+//  * The {@linkcode MultiStepFormSchema} instance is returned.
+//  * @param options Options to create a new instance of {@linkcode MultiStepFormSchema}.
+//  */
+// export function createMultiStepFormContext<
+//   step extends Step<casing>,
+//   casing extends CasingType = DefaultCasing,
+//   storageKey extends string = DefaultStorageKey,
+//   resolvedStep extends ResolvedStep<step, casing> = ResolvedStep<step, casing>,
+//   stepNumbers extends StepNumbers<resolvedStep> = StepNumbers<resolvedStep>,
+//   schema extends MultiStepFormSchema<
+//     step,
+//     casing,
+//     storageKey,
+//     resolvedStep,
+//     stepNumbers
+//   > = MultiStepFormSchema<step, casing, storageKey, resolvedStep, stepNumbers>
+// >(
+//   options: MultiStepFormSchemaConfig<
+//     step,
+//     Constrain<casing, CasingType>,
+//     storageKey
+//   >
+// ): MultiStepFormContextResult<schema> & {
+//   schema: MultiStepFormSchema<step, casing, storageKey>;
+// };
 export function createMultiStepFormContext<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType = DefaultCasing,
-  storageKey extends string = 'MultiStepForm'
->(
-  schema: MultiStepFormSchema<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  >
-): MultiStepFormContextResult<
-  step,
-  resolvedStep,
-  stepNumbers,
-  casing,
-  storageKey
->;
-/**
- * Create multi step form context without a {@linkcode MultiStepFormSchema} instance.
- *
- * The {@linkcode MultiStepFormSchema} instance is returned.
- * @param options Options to create a new instance of {@linkcode MultiStepFormSchema}.
- */
-export function createMultiStepFormContext<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType = DefaultCasing,
-  storageKey extends string = 'MultiStepForm'
->(
-  options: MultiStepFormSchemaOptions<
-    step,
-    types.Constrain<casing, casing.CasingType>,
-    storageKey
-  >
-): MultiStepFormContextResult<
-  step,
-  resolvedStep,
-  stepNumbers,
-  casing,
-  storageKey
-> & {
-  schema: MultiStepFormSchema<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  >;
-};
-export function createMultiStepFormContext<
-  step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, InferStepOptions<step>, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
-  casing extends casing.CasingType = DefaultCasing,
-  storageKey extends string = 'MultiStepForm'
->(
-  schemaOrOptions:
-    | MultiStepFormSchema<step, resolvedStep, stepNumbers, casing, storageKey>
-    | MultiStepFormSchemaOptions<
-        step,
-        types.Constrain<casing, casing.CasingType>,
-        storageKey
-      >
-): any {
-  const isInstance = schemaOrOptions instanceof MultiStepFormSchema;
-  const schema: MultiStepFormSchema<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  > = isInstance ? schemaOrOptions : createMultiStepFormSchema(schemaOrOptions);
-  const Context = createContext<MultiStepFormObserver<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  > | null>(null);
+  schema extends AnyMultiStepFormSchema,
+  resolvedStep extends MultiStepFormSchema.resolvedStep<schema> = MultiStepFormSchema.resolvedStep<schema>
+>(schema: schema): MultiStepFormContextResult<schema> {
+  // const isInstance = schemaOrOptions instanceof MultiStepFormSchema;
+  // const schema: schema = isInstance
+  //   ? schemaOrOptions
+  //   : createMultiStepFormSchema(schemaOrOptions);
+  // const Context = createContext(schema);
 
-  function Provider({ children }: { children: ReactNode }) {
-    const [observer] = useState(() => new MultiStepFormObserver({ schema }));
+  // function Provider({ children }: { children: ReactNode }) {
+  //   const [observer] = useState(() => new MultiStepFormObserver({ schema }));
 
-    useEffect(() => {
-      const unmount = schema.mount();
+  //   useEffect(() => {
+  //     const unmount = schema.mount();
 
-      return () => {
-        unmount();
-        observer.destroy();
-      };
-    }, [observer]);
+  //     return () => {
+  //       unmount();
+  //       observer.destroy();
+  //     };
+  //   }, [observer]);
 
-    return <Context.Provider value={observer}>{children}</Context.Provider>;
-  }
+  //   return <Context.Provider value={observer}>{children}</Context.Provider>;
+  // }
 
-  function throwIfInvalidStepNumber(
-    schema: MultiStepFormSchema<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      storageKey
-    >,
-    stepNumber: number
-  ) {
-    const formatter = new Intl.ListFormat('en', {
-      type: 'disjunction',
-      style: 'long',
-    });
-    const { as, isValidStepNumber } = schema.stepSchema.steps;
+  // function throwIfInvalidStepNumber(
+  //   schema: MultiStepFormSchema<step, casing, storageKey>,
+  //   stepNumber: number
+  // ) {
+  //   const formatter = new Intl.ListFormat('en', {
+  //     type: 'disjunction',
+  //     style: 'long',
+  //   });
+  //   const { as, isValidStepNumber } = schema.stepSchema.steps;
 
-    invariant(
-      isValidStepNumber(stepNumber),
-      `The step number "${stepNumber}" is not a valid step number. Valid step numbers include ${formatter.format(
-        as('array.string.untyped')
-      )}`,
-      TypeError
-    );
-  }
+  //   invariant(
+  //     isValidStepNumber(stepNumber),
+  //     `The step number "${stepNumber}" is not a valid step number. Valid step numbers include ${formatter.format(
+  //       as('array.string.untyped')
+  //     )}`,
+  //     TypeError
+  //   );
+  // }
 
-  function useMultiStepFormSchema() {
-    const observer = useContext(Context);
-
-    if (!observer) {
-      throw new Error(
-        'useMultiStepFormData must be used within MultiStepFormProvider'
-      );
-    }
-
-    const snapshot = useSyncExternalStore(
-      observer.subscribe,
-      () => observer.getSnapshot().getResult(),
-      () => observer.getSnapshot().getResult()
-    );
-
-    // need a new instance due to new functions that are needed
-    return snapshot;
-  }
-
-  function useMultiStepFormData(): MultiStepFormSchema<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    storageKey
-  >;
-  function useMultiStepFormData<stepNumber extends stepNumbers>(options: {
-    stepNumber: stepNumber;
-  }): GetCurrentStep<resolvedStep, stepNumber>;
-  function useMultiStepFormData<data>(
-    selector: (
-      schema: MultiStepFormSchema<
-        step,
-        resolvedStep,
-        stepNumbers,
-        casing,
-        storageKey
-      >
-    ) => data
-  ): data;
-  function useMultiStepFormData(
-    optionsOrSelector?:
-      | { stepNumber: stepNumbers }
-      | ((
-          data: MultiStepFormSchema<
-            step,
-            resolvedStep,
-            stepNumbers,
-            casing,
-            storageKey
-          >
-        ) => unknown)
-  ) {
-    const snapshot = useMultiStepFormSchema();
-
-    if (typeof optionsOrSelector === 'object') {
-      const stepNumber = optionsOrSelector.stepNumber;
-
-      throwIfInvalidStepNumber(snapshot, stepNumber);
-
-      return snapshot.stepSchema.get({ step: stepNumber }).data;
-    }
-
-    if (typeof optionsOrSelector === 'function') {
-      return optionsOrSelector(snapshot);
-    }
-
-    return snapshot;
-  }
+  // @ts-ignore Type instantiation is excessively deep and possibly infinite
+  const useMultiStepFormData = createMultiStepFormDataHook(schema);
 
   function useCurrentStepData<
-    stepNumber extends stepNumbers,
+    targetStep extends keyof resolvedStep,
     props = undefined,
     isDataGuaranteed extends boolean = false
   >(
-    options: UseCurrentStepOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber,
-      props,
-      isDataGuaranteed
-    >
-  ): UseCurrentStepResult<
-    step,
-    resolvedStep,
-    stepNumbers,
-    casing,
-    stepNumber,
-    props,
-    isDataGuaranteed
-  > {
-    const { stepNumber, notFoundMessage, isDataGuaranteed } = options;
-    const data = useMultiStepFormData({ stepNumber }) as GetCurrentStep<
-      resolvedStep,
-      stepNumber
-    >;
+    options: UseCurrentStepOptions<schema, targetStep, props, isDataGuaranteed>
+  ): UseCurrentStepResult<schema, targetStep, props, isDataGuaranteed> {
+    const { targetStep, notFoundMessage, isDataGuaranteed } = options;
+    const data = useMultiStepFormData({
+      targetStep,
+    });
     const NoDataFoundComponent = notFoundMessage
-      ? createComponent({ stepNumber })(notFoundMessage)
+      ? withNoStepDataFound({ targetStep }, notFoundMessage)
       : (props: Omit<ComponentProps<'div'>, 'children'>) => (
-          <div {...props}>No data found for step {stepNumber}</div>
+          <div {...props}>No data found for step {String(targetStep)}</div>
         );
 
     if (isDataGuaranteed) {
@@ -641,28 +363,26 @@ export function createMultiStepFormContext<
     } as never;
   }
 
-  function useProgress<stepNumber extends stepNumbers, props = undefined>(
-    options: UseProgressOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber,
-      props
-    >
+  function useProgress<
+    targetStep extends keyof resolvedStep,
+    props = undefined
+  >(
+    options: UseProgressOptions<schema, targetStep, props>
   ): UseProgressResult<props> {
     const steps = useMultiStepFormData(
       (data) => data.stepSchema.steps.value.length
     );
     const {
-      currentStep,
+      targetStep,
       maxProgressValue = 100,
       totalSteps = steps,
       progressTextTransformer,
     } = options;
+    const currentStep = throwIfInvalidStepNumber(schema, targetStep);
     const value = (currentStep / totalSteps) * maxProgressValue;
     const ProgressText = progressTextTransformer
-      ? createComponent({ currentStep, maxProgressValue, totalSteps })(
+      ? withProgressText(
+          { targetStep, maxProgressValue, totalSteps },
           progressTextTransformer
         )
       : (props: Omit<ComponentProps<'div'>, 'children'>) => (
@@ -692,52 +412,41 @@ export function createMultiStepFormContext<
     return canRestart;
   }
 
-  function withProgressText<stepNumber extends stepNumbers, props>(
-    options: UseProgressBaseOptions<
-      step,
-      resolvedStep,
-      stepNumbers,
-      casing,
-      stepNumber
-    >,
+  function withProgressText<
+    targetStep extends keyof resolvedStep,
+    props = undefined
+  >(
+    options: UseProgressBaseOptions<schema, targetStep>,
     cb: (
-      ctx: Required<
-        UseProgressBaseOptions<
-          step,
-          resolvedStep,
-          stepNumbers,
-          casing,
-          stepNumbers
-        >
-      >,
+      ctx: Required<UseProgressBaseOptions<schema, targetStep>>,
       props: props
     ) => ReactNode
   ) {
     const steps = schema.getSnapshot().stepSchema.steps.value.length;
-    const { currentStep, maxProgressValue = 100, totalSteps = steps } = options;
+    const { targetStep, maxProgressValue = 100, totalSteps = steps } = options;
 
-    return createComponent({ currentStep, maxProgressValue, totalSteps })(cb);
+    return createComponent({ targetStep, maxProgressValue, totalSteps })(cb);
   }
 
-  function withNoStepDataFound<stepNumber extends stepNumbers, props>(
-    options: { currentStep: stepNumber },
-    cb: (ctx: { currentStep: stepNumber }, props: props) => ReactNode
+  function withNoStepDataFound<
+    targetStep extends keyof resolvedStep,
+    props = undefined
+  >(
+    options: BaseOptions<schema, targetStep>,
+    cb: (ctx: BaseOptions<schema, targetStep>, props: props) => ReactNode
   ) {
-    throwIfInvalidStepNumber(schema, options.currentStep);
+    throwIfInvalidStepNumber(schema, options.targetStep);
 
     return createComponent(options)(cb);
   }
 
   return {
-    MultiStepFormContext: Context,
-    MultiStepFormProvider: Provider,
-    useMultiStepFormSchema,
+    // MultiStepFormContext: Context,
     useMultiStepFormData,
     useCurrentStepData,
     useProgress,
     useCanRestartForm,
     withProgressText,
     withNoStepDataFound,
-    ...(isInstance ? {} : { schema: schema }),
   };
 }
