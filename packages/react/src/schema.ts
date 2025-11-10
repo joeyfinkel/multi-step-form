@@ -92,6 +92,7 @@ export class MultiStepFormSchema<
   stepSchema: MultiStepFormStepSchema<
     step,
     casing,
+    storageKey,
     formAlias,
     formEnabledFor,
     formProps
@@ -115,7 +116,14 @@ export class MultiStepFormSchema<
       ...rest,
     });
 
-    this.stepSchema = new MultiStepFormStepSchema({
+    this.stepSchema = new MultiStepFormStepSchema<
+      step,
+      casing,
+      storageKey,
+      formAlias,
+      formEnabledFor,
+      formProps
+    >({
       nameTransformCasing,
       ...rest,
     });

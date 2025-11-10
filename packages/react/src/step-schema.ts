@@ -6,6 +6,7 @@ import {
   type CreateHelperFunctionOptionsBase,
   createStep,
   type DefaultCasing,
+  type DefaultStorageKey,
   type GetCurrentStep,
   type HelperFnChosenSteps,
   type HelperFnInputBase,
@@ -27,6 +28,7 @@ import { MultiStepFormSchemaConfig } from './form-config';
 export interface MultiStepFormSchemaStepConfig<
   TStep extends Step<TCasing>,
   TCasing extends CasingType,
+  TStorageKey extends string,
   TFormAlias extends string,
   TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>,
   TFormProps extends object,
@@ -34,7 +36,7 @@ export interface MultiStepFormSchemaStepConfig<
     TStep,
     TCasing
   >
-> extends MultiStepFormSchemaStepBaseConfig<TStep, TCasing>,
+> extends MultiStepFormSchemaStepBaseConfig<TStep, TCasing, TStorageKey>,
     MultiStepFormSchemaConfig.Form<
       TResolvedStep,
       TFormAlias,
@@ -299,6 +301,7 @@ namespace CreateComponentImplConfig {
 export class MultiStepFormStepSchema<
     step extends Step<casing>,
     casing extends CasingType = DefaultCasing,
+    storageKey extends string = DefaultStorageKey,
     formAlias extends string = MultiStepFormSchemaConfig.defaultFormAlias,
     formEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<resolvedStep> = MultiStepFormSchemaConfig.defaultEnabledFor,
     formProps extends object = ComponentPropsWithRef<'form'>,
@@ -326,6 +329,7 @@ export class MultiStepFormStepSchema<
     config: MultiStepFormSchemaStepConfig<
       step,
       Constrain<casing, CasingType>,
+      storageKey,
       formAlias,
       formEnabledFor,
       formProps
@@ -333,7 +337,7 @@ export class MultiStepFormStepSchema<
   ) {
     const { form, ...rest } = config;
 
-    super(rest);
+    super(rest as never);
 
     this.value = this.enrichValues(createStep(this.original));
     this.value = this.enrichValues(this.value, (step) => {
@@ -488,13 +492,21 @@ export class MultiStepFormStepSchema<
                 nameTransformCasing,
                 type,
                 onInputChange: (value: unknown) =>
-                  update('fields', (prev) => ({
-                    ...prev,
-                    [name]: {
-                      ...prev[name],
-                      defaultValue: value,
-                    },
-                  })),
+                  // TODO remove type assertions
+                  update(
+                    'fields' as never,
+                    (prev) =>
+                      ({
+                        ...(prev as Record<string, unknown>),
+                        [name]: {
+                          ...((prev as Record<string, unknown>)[name] as Record<
+                            string,
+                            unknown
+                          >),
+                          defaultValue: value,
+                        },
+                      } as never)
+                  ),
               };
             });
 
