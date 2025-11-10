@@ -16,7 +16,6 @@ import {
   DEFAULT_STORAGE_KEY,
   MultiStepFormStorage,
   type DefaultStorageKey,
-  type StorageConfig,
 } from './storage.js';
 import { Subscribable } from './subscribable.js';
 

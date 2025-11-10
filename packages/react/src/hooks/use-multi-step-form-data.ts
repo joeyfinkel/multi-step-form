@@ -1,14 +1,5 @@
 import type { AnyMultiStepFormSchema, MultiStepFormSchema } from '@/schema';
-import type { AnyResolvedStep, ResolvedStep } from '@/step-schema';
-import {
-  invariant,
-  VALIDATED_STEP_REGEX,
-  type CasingType,
-  type DefaultCasing,
-  type DefaultStorageKey,
-  type Step,
-  type StepNumbers,
-} from '@multi-step-form/core';
+import { invariant, VALIDATED_STEP_REGEX } from '@multi-step-form/core';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 export type UseMultiStepFormDataOptions<
