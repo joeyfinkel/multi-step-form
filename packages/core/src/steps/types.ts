@@ -1,3 +1,4 @@
+import type { StorageConfig } from '@/storage';
 import type {
   CasingType,
   Constrain,
@@ -682,10 +683,15 @@ export type HelperFnWithoutValidator<
 ) => Response;
 export interface MultiStepFormSchemaStepConfig<
   TStep extends Step<TCasing>,
-  TCasing extends CasingType
+  TCasing extends CasingType,
+  TStorageKey extends string
 > extends NameTransformCasingOptions<TCasing> {
   /**
    * The steps that this multi step form will include.
    */
   steps: InferStepOptions<TStep>;
+  /**
+   * The options for the storage module.
+   */
+  storage?: Omit<StorageConfig<any, TStorageKey>, 'data'>;
 }

@@ -5,6 +5,7 @@ import type {
   HelperFnChosenSteps,
   HelperFnCtx,
   StepNumbers,
+  Updater,
 } from './types';
 import { comparePartialArray, printErrors } from '@/utils/helpers';
 
@@ -197,4 +198,15 @@ export function createCtx<
   }
 
   throw new Error(`${baseErrorMessage()} OR to "all"`);
+}
+
+export function functionalUpdate<TInput, TOutput>(
+  updater: Updater<TInput, TOutput>,
+  input: TInput
+) {
+  if (typeof updater === 'function') {
+    return (updater as (_: TInput) => TOutput)(input);
+  }
+
+  return updater;
 }

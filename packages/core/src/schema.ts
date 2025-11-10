@@ -24,17 +24,7 @@ export interface MultiStepFormSchemaOptions<
   TStep extends Step<TCasing>,
   TCasing extends CasingType,
   TStorageKey extends string
-> extends MultiStepFormSchemaStepConfig<TStep, TCasing> {
-  /**
-   * The default casing transformation to use.
-   * @default 'title'
-   */
-  nameTransformCasing?: TCasing;
-  /**
-   * The options for the storage module.
-   */
-  storage?: Omit<StorageConfig<any, TStorageKey>, 'data'>;
-}
+> extends MultiStepFormSchemaStepConfig<TStep, TCasing, TStorageKey> {}
 export type MultiStepFormSchemaListener<
   TStep extends Step<TCasing>,
   TCasing extends CasingType,

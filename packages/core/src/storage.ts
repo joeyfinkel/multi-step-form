@@ -69,92 +69,33 @@ export class MultiStepFormStorage<
     );
   }
 
-  /**
-   * Retrieves a value from storage.
-   *
-   * @returns The parsed value stored under the default storage key.
-   * @throws {Error} if no storage is available.
-   *
-   * @example
-   * const data = storage.get<MyType>();
-   */
-  /**
-   * Retrieves a value from storage by a specific key.
-   *
-   * @param key - The key to retrieve the value for.
-   * @returns The parsed value stored under the provided key.
-   * @throws {Error} if no storage is available.
-   *
-   * @example
-   * const data = storage.get<MyType>('customKey');
-   */
-  get<value>(): value;
-  get<value>(key: string): value;
-  get(key?: string) {
+  hasKey() {
+    return this.store.getItem(this.key) !== null;
+  }
+
+  get() {
     this.throwOnEmptyStore();
 
-    const item = this.store.getItem(key ?? this.key);
+    const item = this.store.getItem(this.key);
 
     if (item) {
       const parsed = JSON.parse(item);
 
-      return parsed;
+      return parsed as data;
     }
   }
 
-  remove(): void;
-  remove(key: string): void;
-  remove(key?: string) {
+
+  remove() {
     this.throwOnEmptyStore();
-    this.store.removeItem(key ?? this.key);
+    this.store.removeItem(this.key);
   }
 
-  /**
-   * Adds or updates the value stored under the default storage key.
-   *
-   * @param value - The updater value, which can be an object or a function that receives the current data and returns the new data.
-   * @throws {Error} if no storage is available.
-   *
-   * @example
-   * storage.add({ foo: 'bar' });
-   * // OR
-   * storage.add((current) => ({ ...current, foo: 'bar' }));
-   */
-  add(value: Updater<data>): void;
-  /**
-   * Adds or updates the value stored under the provided key.
-   *
-   * @param key - The key to store the value under.
-   * @param value - The updater value, which can be an object or a function that receives the current data and returns the new data.
-   * @throws {Error} if no storage is available.
-   *
-   * @example
-   * storage.add('customKey', { foo: 'bar' });
-   * // OR
-   * storage.add('customKey', (current) => ({ ...current, foo: 'bar' }));
-   */
-  add(key: string, value: Updater<data>): void;
-  add(keyOrValue: string | Updater<data>, value?: Updater<data>) {
+  add(value: Updater<data>) {
     this.throwOnEmptyStore();
 
-    if (typeof keyOrValue === 'string') {
-      invariant(
-        value,
-        'An updater is required. It can an object or a function'
-      );
+    const resolvedValue = JSON.stringify(this.resolveValue(value));
 
-      const resolvedValue = JSON.stringify(this.resolveValue(value));
-
-      this.store.setItem(keyOrValue, resolvedValue);
-    } else {
-      invariant(
-        keyOrValue,
-        'An updater is required. It can an object or a function'
-      );
-
-      const resolvedValue = JSON.stringify(this.resolveValue(keyOrValue));
-
-      this.store.setItem(this.key, resolvedValue);
-    }
+    this.store.setItem(this.key, resolvedValue);
   }
 }

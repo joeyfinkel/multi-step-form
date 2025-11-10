@@ -1,3 +1,27 @@
+import {
+  DEFAULT_STORAGE_KEY,
+  DefaultStorageKey,
+  MultiStepFormStorage,
+} from '@/storage';
+import {
+  DEFAULT_CASING,
+  DEFAULT_FIELD_TYPE,
+  changeCasing,
+  isCasingValid,
+  isFieldType,
+  setCasingType,
+  type CasingType,
+  type Constrain,
+  type DefaultCasing,
+  type Expand,
+} from '@/utils';
+import { invariant } from '@/utils/invariant';
+import {
+  runStandardValidation,
+  type AnyValidator,
+  type DefaultValidator,
+  type StandardSchemaValidator,
+} from '@/utils/validator';
 import { Subscribable } from '../subscribable';
 import type {
   AnyResolvedStep,
@@ -31,26 +55,11 @@ import type {
   Updater,
 } from './types';
 import {
-  changeCasing,
-  DEFAULT_CASING,
-  isCasingValid,
-  setCasingType,
-  type CasingType,
-  type DefaultCasing,
-  DEFAULT_FIELD_TYPE,
-  type Constrain,
-  type Expand,
-  isFieldType,
-} from '@/utils';
-import { invariant } from '@/utils/invariant';
-import {
-  runStandardValidation,
-  type AnyValidator,
-  type DefaultValidator,
-  type StandardSchemaValidator,
-} from '@/utils/validator';
-import { MultiStepFormStepHelper } from './helper';
-import { createCtx, getStep, type GetStepOptions } from './utils';
+  createCtx,
+  functionalUpdate,
+  getStep,
+  type GetStepOptions,
+} from './utils';
 
 export interface MultiStepFormStepSchemaFunctions<
   TResolvedStep extends AnyResolvedStep,
@@ -337,7 +346,8 @@ export class MultiStepFormStepSchema<
       step,
       casing
     >,
-    stepNumbers extends StepNumbers<resolvedStep> = StepNumbers<resolvedStep>
+    stepNumbers extends StepNumbers<resolvedStep> = StepNumbers<resolvedStep>,
+    storageKey extends string = DefaultStorageKey
   >
   extends Subscribable<MultiStepFormStepSchemaListener<step, casing>>
   implements MultiStepFormStepSchemaFunctions<resolvedStep, stepNumbers>
@@ -356,19 +366,18 @@ export class MultiStepFormStepSchema<
   private readonly firstStep: StepData<resolvedStep, FirstStep<resolvedStep>>;
   private readonly lastStep: StepData<resolvedStep, LastStep<resolvedStep>>;
   private readonly stepNumbers: Array<number>;
-  // protected readonly stepHelper: MultiStepFormStepHelper<
-  //   step,
-  //   casing,
-  //   resolvedStep,
-  //   stepNumbers
-  // >;
+  private readonly storage: MultiStepFormStorage<resolvedStep, storageKey>;
 
   constructor(
-    config: MultiStepFormSchemaStepConfig<step, Constrain<casing, CasingType>>
+    config: MultiStepFormSchemaStepConfig<
+      step,
+      Constrain<casing, CasingType>,
+      storageKey
+    >
   ) {
     super();
 
-    const { steps, nameTransformCasing } = config;
+    const { steps, nameTransformCasing, storage } = config;
 
     this.defaultNameTransformationCasing = setCasingType(
       nameTransformCasing
@@ -380,11 +389,12 @@ export class MultiStepFormStepSchema<
     this.stepNumbers = Object.keys(this.value).map((key) =>
       Number.parseInt(key.replace('step', ''))
     );
-    // this.stepHelper = new MultiStepFormStepHelper(
-    //   this.value,
-    //   this.stepNumbers as Array<stepNumbers>
-    // );
 
+    this.storage = new MultiStepFormStorage<resolvedStep, storageKey>({
+      data: this.value,
+      key: (storage?.key ?? DEFAULT_STORAGE_KEY) as storageKey,
+      store: storage?.store,
+    });
     this.firstStep = this.first();
     this.lastStep = this.last();
     this.steps = {
@@ -491,6 +501,11 @@ export class MultiStepFormStepSchema<
     return this.get<LastStep<resolvedStep>>({ step: lastStep as never });
   }
 
+  private handlePostUpdate() {
+    this.storage.add(this.value);
+    this.notify();
+  }
+
   private createStepUpdaterFnImpl<
     TargetStep extends stepNumbers,
     CurrentStepData extends GetCurrentStep<resolvedStep, TargetStep>,
@@ -557,26 +572,28 @@ export class MultiStepFormStepSchema<
         ...this.value,
         [stepKey]: {
           ...this.value[stepKey],
-          [fieldOrUpdater]:
-            typeof updater === 'function'
-              ? (updater as Function)(
-                  this.value[stepKey][
-                    fieldOrUpdater as keyof (keyof resolvedStep)
-                  ]
-                )
-              : updater,
+          [fieldOrUpdater]: functionalUpdate(
+            updater,
+            this.value[stepKey][
+              fieldOrUpdater as keyof (keyof resolvedStep)
+            ] as CurrentStepData[Field]
+          ),
         },
       };
 
-      this.notify();
-    } else if (
+      this.handlePostUpdate();
+
+      return;
+    }
+
+    if (
       typeof fieldOrUpdater === 'object' ||
       typeof fieldOrUpdater === 'function'
     ) {
-      const updatedData =
-        typeof fieldOrUpdater === 'function'
-          ? fieldOrUpdater(this.value[stepKey] as CurrentStepData)
-          : fieldOrUpdater;
+      const updatedData = functionalUpdate(
+        fieldOrUpdater,
+        this.value[stepKey] as CurrentStepData
+      );
 
       invariant(
         typeof updatedData === 'object',
@@ -591,13 +608,15 @@ export class MultiStepFormStepSchema<
         },
       };
 
-      this.notify();
-    } else {
-      throw new TypeError(
-        `The second parameter must be one of the following: a specific field to update (string), an object with the updated data, or a function that returns the updated data. It was ${typeof fieldOrUpdater}`,
-        { cause: fieldOrUpdater }
-      );
+      this.handlePostUpdate();
+
+      return;
     }
+
+    throw new TypeError(
+      `The second parameter must be one of the following: a specific field to update (string), an object with the updated data, or a function that returns the updated data. It was ${typeof fieldOrUpdater}`,
+      { cause: fieldOrUpdater }
+    );
   }
 
   protected createStepUpdaterFn<TargetStep extends stepNumbers>(
