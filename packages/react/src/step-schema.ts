@@ -7,7 +7,9 @@ import {
   createStep,
   type DefaultCasing,
   type DefaultStorageKey,
+  type Expand,
   type GetCurrentStep,
+  type GetFieldsForStep,
   type HelperFnChosenSteps,
   type HelperFnInputBase,
   invariant,
@@ -172,7 +174,8 @@ export namespace StepSpecificComponent {
     TProps,
     TFormAlias extends string,
     TFormProps extends object,
-    TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>
+    TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>,
+    TAdditionalInput extends object = {}
   > = CreateComponent<
     Input<TResolvedStep, TSteps, TChosenSteps> &
       formComponent<
@@ -182,9 +185,31 @@ export namespace StepSpecificComponent {
         TFormAlias,
         TFormProps,
         TFormEnabledFor
-      >,
+      > &
+      TAdditionalInput,
     TProps
   >;
+  export type defaultFormInstanceAlias = 'form';
+  export type options<
+    TResolvedStep extends AnyResolvedStep,
+    TSteps extends StepNumbers<TResolvedStep>,
+    TTargetStep extends HelperFnChosenSteps<TResolvedStep, TSteps>,
+    TFormInstanceAlias extends string,
+    TFormInstance
+  > = {
+    useFormInstance: WithAlias<
+      TFormInstanceAlias,
+      HelperFnInputBase<TResolvedStep, TSteps, TTargetStep> & {
+        /**
+         * An object containing all the default values for the current step.
+         */
+        defaultValues: Expand<
+          ExtractedDefaultValues<TResolvedStep, TSteps, TTargetStep>
+        >;
+      },
+      TFormInstance
+    >;
+  };
 }
 
 export type CreateStepSpecificComponentCallback<
@@ -194,7 +219,8 @@ export type CreateStepSpecificComponentCallback<
   TProps,
   TFormAlias extends string,
   TFormProps extends object,
-  TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>
+  TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>,
+  TAdditionalInput extends object = {}
 > = StepSpecificComponent.callback<
   TResolvedStep,
   TSteps,
@@ -202,8 +228,35 @@ export type CreateStepSpecificComponentCallback<
   TProps,
   TFormAlias,
   TFormProps,
-  TFormEnabledFor
+  TFormEnabledFor,
+  TAdditionalInput
 >;
+export type WithAlias<
+  TAlias extends string,
+  TRenderInput,
+  TReturn,
+  TRenderProps = undefined
+> = {
+  /**
+   * The name of the return value of the `render` method.
+   */
+  alias?: TAlias;
+  render: CreateFunction<[input: TRenderInput, props: TRenderProps], TReturn>;
+};
+export type ExtractedDefaultValues<
+  TResolvedStep extends AnyResolvedStep,
+  TSteps extends StepNumbers<TResolvedStep>,
+  TTargetStep extends HelperFnChosenSteps<TResolvedStep, TSteps>,
+  TExtractedStepNumber extends number = HelperFnChosenSteps.extractStepNumber<
+    TResolvedStep,
+    TSteps,
+    TTargetStep
+  >,
+  TFields extends GetFieldsForStep<
+    TResolvedStep,
+    ValidStepKey<TExtractedStepNumber>
+  > = GetFieldsForStep<TResolvedStep, ValidStepKey<TExtractedStepNumber>>
+> = { [field in keyof TFields]: TFields[field]['defaultValue'] };
 export interface StepSpecificCreateComponentFn<
   TResolvedStep extends AnyResolvedStep,
   TSteps extends StepNumbers<TResolvedStep>,
@@ -225,6 +278,29 @@ export interface StepSpecificCreateComponentFn<
       TFormAlias,
       TFormProps,
       TFormEnabledFor
+    >
+  ): CreatedMultiStepFormComponent<props>;
+  <
+    formInstance,
+    formInstanceAlias extends string = StepSpecificComponent.defaultFormInstanceAlias,
+    props = undefined
+  >(
+    options: StepSpecificComponent.options<
+      TResolvedStep,
+      TSteps,
+      TTargetStep,
+      formInstanceAlias,
+      formInstance
+    >,
+    fn: CreateStepSpecificComponentCallback<
+      TResolvedStep,
+      TSteps,
+      TTargetStep,
+      props,
+      TFormAlias,
+      TFormProps,
+      TFormEnabledFor,
+      { [_ in formInstanceAlias]: formInstance }
     >
   ): CreatedMultiStepFormComponent<props>;
 }
