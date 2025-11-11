@@ -67,7 +67,7 @@ export const schema = createMultiStepFormSchema({
     ) {
       return (
         <div className='flex flex-col gap-y-4'>
-          <div className='flex flex-col gap-y2'>
+          <div className='flex flex-col gap-y-2'>
             <h1 className='font-bold text-xl'>{title}</h1>
             {description && <p>{description}</p>}
           </div>
@@ -77,7 +77,6 @@ export const schema = createMultiStepFormSchema({
     },
   },
 });
-
 
 export const {
   useCanRestartForm,

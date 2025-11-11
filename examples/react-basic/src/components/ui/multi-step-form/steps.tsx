@@ -1,10 +1,16 @@
-import { schema, useCurrentStepData } from '.';
+import { schema } from '.';
 import { Field, FieldLabel, FieldSet } from '../field';
 import { Input } from '../input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../select';
 
 export const Step1 = schema.stepSchema.value.step1.createComponent(
-  function Step1({ ctx, MyCoolCustomForm, Field: FieldComponent }, props) {
+  function Step1({ ctx, MyCoolCustomForm, Field: FieldComponent }) {
     const { title } = ctx.step1;
 
     return (
@@ -92,9 +98,13 @@ export const Step2 = schema.stepSchema.value.step2.createComponent(
             {({ defaultValue, label, onInputChange }) => (
               <Field>
                 <FieldLabel htmlFor={label}>{label}</FieldLabel>
-                <Select name={label} value={defaultValue} onValueChange={onInputChange}>
+                <Select
+                  name={label}
+                  defaultValue={defaultValue}
+                  onValueChange={onInputChange}
+                >
                   <SelectTrigger id={label}>
-                    <SelectValue placeholder='Select your preferred language'/>
+                    <SelectValue placeholder='Select your preferred language' />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value='en'>English</SelectItem>
