@@ -1,5 +1,5 @@
 import type { AnyMultiStepFormSchema, MultiStepFormSchema } from '@/schema';
-import { invariant, VALIDATED_STEP_REGEX } from '@multi-step-form/core';
+import { invariant, VALIDATED_STEP_REGEX } from '@jfdevelops/multi-step-form';
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector';
 
 export type UseMultiStepFormDataOptions<

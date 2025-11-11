@@ -6,7 +6,7 @@ export function StepLayout({
 }: {
   currentStep: StepNumber;
 }) {
-  const { NoCurrentData, data, hasData } = useCurrentStepData({
+  const { NoCurrentData, hasData } = useCurrentStepData({
     targetStep: stepNumber,
   });
 

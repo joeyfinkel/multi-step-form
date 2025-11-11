@@ -2,7 +2,7 @@ import {
   createMultiStepFormContext,
   createMultiStepFormSchema,
   type MultiStepFormSchema,
-} from '@multi-step-form/react';
+} from '@jfdevelops/react-multi-step-form';
 import type { ComponentPropsWithRef } from 'react';
 
 //@ts-ignore

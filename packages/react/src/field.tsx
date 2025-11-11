@@ -3,7 +3,7 @@ import type {
   StepNumbers,
   Updater,
   ValidStepKey,
-} from '@multi-step-form/core';
+} from '@jfdevelops/multi-step-form';
 import type { ReactNode } from 'react';
 
 export namespace Field {

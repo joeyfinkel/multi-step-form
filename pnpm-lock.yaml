@@ -20,7 +20,7 @@ importers:
 
   examples/react-basic:
     dependencies:
-      '@multi-step-form/react':
+      '@jfdevelops/react-multi-step-form':
         specifier: workspace:*
         version: link:../../packages/react
       '@radix-ui/react-label':
@@ -135,7 +135,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@multi-step-form/core':
+      '@jfdevelops/multi-step-form':
         specifier: workspace:*
         version: link:../core
       use-sync-external-store:

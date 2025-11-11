@@ -1,14 +1,11 @@
-import { MultiStepFormStepSchema } from '@multi-step-form/core';
+import { MultiStepFormStepSchema } from '@jfdevelops/multi-step-form';
 import { type ComponentProps, type ReactNode } from 'react';
 import {
   createMultiStepFormDataHook,
   throwIfInvalidStepNumber,
   UseMultiStepFormData,
 } from './hooks/use-multi-step-form-data';
-import {
-  MultiStepFormSchema,
-  type AnyMultiStepFormSchema
-} from './schema';
+import { MultiStepFormSchema, type AnyMultiStepFormSchema } from './schema';
 import type {
   CreatedMultiStepFormComponent,
   CreateFunction,

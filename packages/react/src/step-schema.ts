@@ -23,7 +23,7 @@ import {
   type StrippedResolvedStep,
   type Updater,
   type ValidStepKey,
-} from '@multi-step-form/core';
+} from '@jfdevelops/multi-step-form';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { createField, type Field } from './field';
 import { MultiStepFormSchemaConfig } from './form-config';

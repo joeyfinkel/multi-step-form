@@ -3,7 +3,7 @@ import type {
   HelperFnChosenSteps,
   StepNumbers,
   ValidStepKey,
-} from '@multi-step-form/core';
+} from '@jfdevelops/multi-step-form';
 import type { ComponentPropsWithRef, JSX } from 'react';
 import type {
   AnyResolvedStep,
