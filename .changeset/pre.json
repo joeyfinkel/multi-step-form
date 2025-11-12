@@ -5,5 +5,7 @@
     "@jfdevelops/multi-step-form": "1.0.0-alpha.2",
     "@jfdevelops/react-multi-step-form": "1.0.0-alpha.2"
   },
-  "changesets": []
+  "changesets": [
+    "yummy-pans-crash"
+  ]
 }
