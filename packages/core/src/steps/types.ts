@@ -236,13 +236,14 @@ export type StepSpecificHelperFn<
   /**
    * Create a helper function with validated input.
    */
-  <Validator, Response>(
+  <validator, additionalCtx extends Record<string, unknown>, response>(
     options: Omit<
       CreateHelperFunctionOptionsWithValidator<
         TResolvedStep,
         TStepNumbers,
         [ValidStepKey<TTargetStep>],
-        Validator
+        validator,
+        additionalCtx
       >,
       'stepData'
     >,
@@ -250,27 +251,35 @@ export type StepSpecificHelperFn<
       TResolvedStep,
       TStepNumbers,
       [ValidStepKey<TTargetStep>],
-      Validator,
-      Response
+      validator,
+      additionalCtx,
+      response
     >
-  ): CreatedHelperFnWithInput<
-    TResolvedStep,
-    TStepNumbers,
-    [ValidStepKey<TTargetStep>],
-    Validator,
-    Response
-  >;
+  ): CreatedHelperFnWithInput<validator, response>;
   /**
    * Create a helper function without input.
    */
-  <Response>(
+  <additionalCtx extends Record<string, unknown>, response>(
     fn: HelperFnWithoutValidator<
       TResolvedStep,
       TStepNumbers,
       [ValidStepKey<TTargetStep>],
-      Response
+      additionalCtx,
+      response
     >
-  ): CreatedHelperFnWithoutInput<Response>;
+  ): CreatedHelperFnWithoutInput<response>;
+  /**
+   * Create a helper function without input.
+   */
+  <response>(
+    fn: HelperFnWithoutValidator<
+      TResolvedStep,
+      TStepNumbers,
+      [ValidStepKey<TTargetStep>],
+      {},
+      response
+    >
+  ): CreatedHelperFnWithoutInput<response>;
 };
 export type GeneralHelperFn<
   TResolvedStep extends AnyResolvedStep,
@@ -280,49 +289,54 @@ export type GeneralHelperFn<
    * Create a helper function with validated input.
    */
   <
-    const ChosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>,
-    Validator,
-    Response
+    const chosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>,
+    validator,
+    additionalCtx extends Record<string, unknown>,
+    response
   >(
     options: CreateHelperFunctionOptionsWithValidator<
       TResolvedStep,
       TStepNumbers,
-      ChosenSteps,
-      Validator
+      chosenSteps,
+      validator,
+      additionalCtx
     >,
     fn: HelperFnWithValidator<
       TResolvedStep,
       TStepNumbers,
-      ChosenSteps,
-      Validator,
-      Response
+      chosenSteps,
+      validator,
+      additionalCtx,
+      response
     >
-  ): CreatedHelperFnWithInput<
-    TResolvedStep,
-    TStepNumbers,
-    ChosenSteps,
-    Validator,
-    Response
-  >;
+  ): CreatedHelperFnWithInput<validator, response>;
   /**
    * Create a helper function without input.
    */
   <
-    const ChosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>,
-    Response
+    const chosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>,
+    additionalCtx extends Record<string, unknown>,
+    response
   >(
     options: CreateHelperFunctionOptionsWithoutValidator<
       TResolvedStep,
       TStepNumbers,
-      ChosenSteps
-    >,
+      chosenSteps
+    > &
+      CreateHelperFunctionOptionsWithCustomCtxOptions<
+        TResolvedStep,
+        TStepNumbers,
+        chosenSteps,
+        additionalCtx
+      >,
     fn: HelperFnWithoutValidator<
       TResolvedStep,
       TStepNumbers,
-      ChosenSteps,
-      Response
+      chosenSteps,
+      additionalCtx,
+      response
     >
-  ): CreatedHelperFnWithoutInput<Response>;
+  ): CreatedHelperFnWithoutInput<response>;
 };
 export type CreateStepHelperFn<
   TResolvedStep extends AnyResolvedStep,
@@ -580,39 +594,56 @@ export type CreateHelperFunctionOptionsWithoutValidator<
   TStepNumbers extends StepNumbers<TResolvedStep>,
   TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>
 > = CreateHelperFunctionOptionsBase<TResolvedStep, TStepNumbers, TChosenSteps>;
-export type CreateHelperFunctionOptionsWithValidator<
+export type CreateHelperFunctionOptionsWithCustomCtxOptions<
   TResolvedStep extends AnyResolvedStep,
   TStepNumbers extends StepNumbers<TResolvedStep>,
   TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>,
-  TValidator
+  TAdditionalCtx
 > = CreateHelperFunctionOptionsBase<
   TResolvedStep,
   TStepNumbers,
   TChosenSteps
 > & {
   /**
-   * A validator used to validate the params.
+   * A function to select the data that will be available in the `fn`'s ctx.
+   * @param input The available input to create the context with.
+   * @returns The created ctx.
    */
-  validator: Constrain<TValidator, AnyValidator, DefaultValidator>;
+  ctxData?: (
+    input: HelperFnInputBase<
+      TResolvedStep,
+      TStepNumbers,
+      'all',
+      HelperFnChosenSteps.resolve<TResolvedStep, TStepNumbers, TChosenSteps>
+    >
+  ) => TAdditionalCtx;
 };
-export type CreatedHelperFnWithInput<
+export type CreateHelperFunctionOptionsWithValidator<
   TResolvedStep extends AnyResolvedStep,
   TStepNumbers extends StepNumbers<TResolvedStep>,
   TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TStepNumbers>,
   TValidator,
-  TResponse
-> = (
-  input: Expand<
-    Omit<
-      HelperFnInputWithValidator<
-        TResolvedStep,
-        TStepNumbers,
-        TChosenSteps,
-        TValidator
-      >,
-      'ctx'
-    >
-  >
+  TAdditionalCtx
+> = CreateHelperFunctionOptionsBase<TResolvedStep, TStepNumbers, TChosenSteps> &
+  CreateHelperFunctionOptionsWithCustomCtxOptions<
+    TResolvedStep,
+    TStepNumbers,
+    TChosenSteps,
+    TAdditionalCtx
+  > & {
+    /**
+     * A validator used to validate the params.
+     */
+    validator: Constrain<TValidator, AnyValidator, DefaultValidator>;
+  };
+// TODO figure out way to make data optional in specific cases
+// example 1: if validateFields === { optionalValue?: string }, then `data` should be
+// optional since there is only one optional field
+// In words: if `validatedFields` only contains optional properties, then `data` should be optional
+// Approach: different interfaces (maybe)
+export type CreatedHelperFnInput<T> = { data: Expand<ResolveValidatorOutput<T>> };
+export type CreatedHelperFnWithInput<TValidator, TResponse> = (
+  input: CreatedHelperFnInput<TValidator>
 ) => TResponse;
 export type CreatedHelperFnWithoutInput<TResponse> = () => TResponse;
 type isString<T> = T extends string ? T : never;
@@ -679,7 +710,7 @@ export interface HelperFnInputBase<
     TSteps,
     TChosenSteps
   > = never,
-  TAdditionalCtx = {}
+  TAdditionalCtx extends Record<string, unknown> = {}
 > {
   ctx: Expand<
     HelperFnCtx<TResolvedStep, TSteps, TChosenSteps, TOmitSteps> &
@@ -690,37 +721,59 @@ export type HelperFnInputWithValidator<
   TResolvedStep extends AnyResolvedStep,
   TSteps extends StepNumbers<TResolvedStep>,
   TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>,
-  TValidator
-> = HelperFnInputBase<TResolvedStep, TSteps, TChosenSteps> & {
+  TValidator,
+  TAdditionalCtx extends Record<string, unknown>
+> = HelperFnInputBase<
+  TResolvedStep,
+  TSteps,
+  TChosenSteps,
+  never,
+  TAdditionalCtx
+> & {
   data: ResolveValidatorOutput<TValidator>;
 };
 export type HelperFnInputWithoutValidator<
   TResolvedStep extends AnyResolvedStep,
   TSteps extends StepNumbers<TResolvedStep>,
-  TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>
-> = HelperFnInputBase<TResolvedStep, TSteps, TChosenSteps>;
+  TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>,
+  TAdditionalCtx extends Record<string, unknown>
+> = HelperFnInputBase<
+  TResolvedStep,
+  TSteps,
+  TChosenSteps,
+  never,
+  TAdditionalCtx
+>;
 
 export type HelperFnWithValidator<
   TResolvedStep extends AnyResolvedStep,
   TSteps extends StepNumbers<TResolvedStep>,
   TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>,
   TValidator,
+  TAdditionalCtx extends Record<string, unknown>,
   Response
 > = (
   input: HelperFnInputWithValidator<
     TResolvedStep,
     TSteps,
     TChosenSteps,
-    TValidator
+    TValidator,
+    TAdditionalCtx
   >
 ) => Response;
 export type HelperFnWithoutValidator<
   TResolvedStep extends AnyResolvedStep,
   TSteps extends StepNumbers<TResolvedStep>,
   TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>,
+  TAdditionalCtx extends Record<string, unknown>,
   Response
 > = (
-  input: HelperFnInputWithoutValidator<TResolvedStep, TSteps, TChosenSteps>
+  input: HelperFnInputWithoutValidator<
+    TResolvedStep,
+    TSteps,
+    TChosenSteps,
+    TAdditionalCtx
+  >
 ) => Response;
 export interface MultiStepFormSchemaStepConfig<
   TStep extends Step<TCasing>,

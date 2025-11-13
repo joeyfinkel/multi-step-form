@@ -140,7 +140,7 @@ export namespace StepSpecificComponent {
     TResolvedStep extends StrippedResolvedStep<AnyResolvedStep>,
     TSteps extends StepNumbers<TResolvedStep>,
     TChosenSteps extends HelperFnChosenSteps<TResolvedStep, TSteps>,
-    TAdditionalCtx
+    TAdditionalCtx extends Record<string, unknown>
   > extends HelperFnInputBase<
       TResolvedStep,
       TSteps,
@@ -185,7 +185,7 @@ export namespace StepSpecificComponent {
     TFormProps extends object,
     TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>,
     TAdditionalInput extends object,
-    TAdditionalCtx
+    TAdditionalCtx extends Record<string, unknown>
   > = CreateComponent<
     Input<TResolvedStep, TSteps, TChosenSteps, TAdditionalCtx> &
       formComponent<
@@ -284,7 +284,7 @@ export type CreateStepSpecificComponentCallback<
   TFormProps extends object,
   TFormEnabledFor extends MultiStepFormSchemaConfig.formEnabledFor<TResolvedStep>,
   TAdditionalInput extends object = {},
-  TAdditionalCtx = {}
+  TAdditionalCtx extends Record<string, unknown> = {}
 > = StepSpecificComponent.callback<
   TResolvedStep,
   TSteps,
@@ -342,7 +342,7 @@ export interface StepSpecificCreateComponentFn<
    */
   <
     formInstance,
-    additionalCtx,
+    additionalCtx extends Record<string, unknown> = {},
     formInstanceAlias extends string = StepSpecificComponent.defaultFormInstanceAlias,
     props = undefined
   >(
