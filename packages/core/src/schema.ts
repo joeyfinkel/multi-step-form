@@ -125,10 +125,10 @@ export class MultiStepFormSchema<
 
 export function createMultiStepFormSchema<
   step extends Step<casing>,
-  resolvedStep extends ResolvedStep<step, casing>,
-  stepNumbers extends StepNumbers<resolvedStep>,
   casing extends CasingType = DefaultCasing,
-  storageKey extends string = typeof DEFAULT_STORAGE_KEY
+  resolvedStep extends ResolvedStep<step, casing> = ResolvedStep<step, casing>,
+  stepNumbers extends StepNumbers<resolvedStep> = StepNumbers<resolvedStep>,
+  storageKey extends string = DefaultStorageKey
 >(
   options: MultiStepFormSchemaOptions<
     step,
@@ -145,3 +145,24 @@ export function createMultiStepFormSchema<
     storageKey
   >(options);
 }
+
+const schema = createMultiStepFormSchema({
+  steps: {
+    step1: {
+      title: 'Step 1',
+      fields: {
+        test: {
+          defaultValue: '',
+        },
+      },
+    },
+    step2: {
+      title: 'Step 2',
+      fields: {
+        bar: {
+          defaultValue: 0,
+        },
+      },
+    },
+  },
+});

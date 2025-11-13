@@ -27,16 +27,18 @@ import type {
   AnyResolvedStep,
   AnyStepField,
   AnyStepFieldOption,
+  CreateHelperFunctionOptionsWithCustomCtxOptions,
   CreateHelperFunctionOptionsWithValidator,
   CreateHelperFunctionOptionsWithoutValidator,
   CreateStepHelperFn,
+  CreatedHelperFnInput,
   CreatedHelperFnWithInput,
   CreatedHelperFnWithoutInput,
   ExtractStepFromKey,
   FirstStep,
   GetCurrentStep,
   HelperFnChosenSteps,
-  HelperFnInputWithValidator,
+  HelperFnCtx,
   HelperFnWithValidator,
   HelperFnWithoutValidator,
   InferStepOptions,
@@ -53,6 +55,7 @@ import type {
   UnionToTuple,
   UpdateStepFn,
   Updater,
+  ValidStepKey,
 } from './types';
 import {
   createCtx,
@@ -683,14 +686,15 @@ export class MultiStepFormStepSchema<
   private createStepHelperFnImpl<
     chosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>
   >(stepData: chosenSteps) {
-    return <Validator, Response>(
+    return <validator, additionalCtx extends Record<string, unknown>, response>(
       optionsOrFunction:
         | Omit<
             CreateHelperFunctionOptionsWithValidator<
               resolvedStep,
               stepNumbers,
               chosenSteps,
-              Validator
+              validator,
+              additionalCtx
             >,
             'stepData'
           >
@@ -706,21 +710,24 @@ export class MultiStepFormStepSchema<
             resolvedStep,
             stepNumbers,
             chosenSteps,
-            Response
+            additionalCtx,
+            response
           >,
       fn:
         | HelperFnWithValidator<
             resolvedStep,
             stepNumbers,
             chosenSteps,
-            Validator,
-            Response
+            validator,
+            additionalCtx,
+            response
           >
         | HelperFnWithoutValidator<
             resolvedStep,
             stepNumbers,
             chosenSteps,
-            Response
+            additionalCtx,
+            response
           >
     ) => {
       const ctx = createCtx<resolvedStep, stepNumbers, chosenSteps>(
@@ -733,19 +740,7 @@ export class MultiStepFormStepSchema<
       }
 
       if (typeof optionsOrFunction === 'object') {
-        return (
-          input?: Expand<
-            Omit<
-              HelperFnInputWithValidator<
-                resolvedStep,
-                stepNumbers,
-                chosenSteps,
-                Validator
-              >,
-              'ctx'
-            >
-          >
-        ) => {
+        return (input?: CreatedHelperFnInput<validator>) => {
           if ('validator' in optionsOrFunction) {
             invariant(
               typeof input === 'object',
@@ -757,7 +752,27 @@ export class MultiStepFormStepSchema<
               input.data
             );
 
-            return fn({ ctx, ...input });
+            let resolvedCtx = ctx as HelperFnCtx<
+              resolvedStep,
+              stepNumbers,
+              chosenSteps
+            >;
+
+            if (optionsOrFunction.ctxData) {
+              const currentStepKey = (
+                stepData as HelperFnChosenSteps.tupleNotation<
+                  ValidStepKey<stepNumbers>
+                >
+              )[0] as keyof resolvedStep;
+              const { [currentStepKey]: _, ...values } = this.value;
+
+              resolvedCtx = {
+                ...resolvedCtx,
+                ...optionsOrFunction.ctxData({ ctx: values as never }),
+              };
+            }
+
+            return fn({ ctx: resolvedCtx as never, ...input });
           }
 
           return (
@@ -765,7 +780,8 @@ export class MultiStepFormStepSchema<
               resolvedStep,
               stepNumbers,
               chosenSteps,
-              Response
+              additionalCtx,
+              response
             >
           )({ ctx });
         };
@@ -785,53 +801,59 @@ export class MultiStepFormStepSchema<
    * Create a helper function with validated input.
    */
   createHelperFn<
-    ChosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>,
-    Validator,
-    Response
+    const chosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>,
+    validator,
+    additionalCtx extends Record<string, unknown>,
+    response
   >(
     options: CreateHelperFunctionOptionsWithValidator<
       resolvedStep,
       stepNumbers,
-      ChosenSteps,
-      Validator
+      chosenSteps,
+      validator,
+      additionalCtx
     >,
     fn: HelperFnWithValidator<
       resolvedStep,
       stepNumbers,
-      ChosenSteps,
-      Validator,
-      Response
+      chosenSteps,
+      validator,
+      additionalCtx,
+      response
     >
-  ): CreatedHelperFnWithInput<
-    resolvedStep,
-    stepNumbers,
-    ChosenSteps,
-    Validator,
-    Response
-  >;
+  ): CreatedHelperFnWithInput<validator, response>;
   /**
    * Create a helper function without input.
    */
   createHelperFn<
-    ChosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>,
-    Response
+    const chosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>,
+    additionalCtx extends Record<string, unknown>,
+    response
   >(
     options: CreateHelperFunctionOptionsWithoutValidator<
       resolvedStep,
       stepNumbers,
-      ChosenSteps
-    >,
+      chosenSteps
+    > &
+      CreateHelperFunctionOptionsWithCustomCtxOptions<
+        resolvedStep,
+        stepNumbers,
+        chosenSteps,
+        additionalCtx
+      >,
     fn: HelperFnWithoutValidator<
       resolvedStep,
       stepNumbers,
-      ChosenSteps,
-      Response
+      chosenSteps,
+      additionalCtx,
+      response
     >
-  ): CreatedHelperFnWithoutInput<Response>;
+  ): CreatedHelperFnWithoutInput<response>;
   // Implementation
   createHelperFn<
     const chosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>,
     response,
+    additionalCtx extends Record<string, unknown>,
     validator = never
   >(
     options:
@@ -839,7 +861,8 @@ export class MultiStepFormStepSchema<
           resolvedStep,
           stepNumbers,
           chosenSteps,
-          validator
+          validator,
+          additionalCtx
         >
       | CreateHelperFunctionOptionsWithoutValidator<
           resolvedStep,
@@ -852,18 +875,20 @@ export class MultiStepFormStepSchema<
           stepNumbers,
           chosenSteps,
           validator,
+          additionalCtx,
           response
         >
       | HelperFnWithoutValidator<
           resolvedStep,
           stepNumbers,
           chosenSteps,
+          additionalCtx,
           response
         >
   ) {
     const { stepData, ...rest } = options;
 
-    return this.createStepHelperFnImpl(stepData as never)(rest, fn);
+    return this.createStepHelperFnImpl(stepData)(rest, fn);
   }
 
   /**
