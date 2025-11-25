@@ -12,10 +12,10 @@ import {
   type HelperFnWithValidator,
   type StepNumbers,
   type UpdateFn,
-  type ValidStepKey
+  type ValidStepKey,
 } from '@/steps';
 import { functionalUpdate } from '@/steps/utils';
-import { invariant, type Constrain } from '@/utils';
+import { invariant, MultiStepFormLogger, type Constrain } from '@/utils';
 import {
   comparePartialArray,
   printErrors,
@@ -31,7 +31,7 @@ export type InternalOptions<T extends AnyResolvedStep> = {
   /**
    * The resolved multi step form values.
    */
-  value: T;
+  getValue: () => T;
   /**
    * A function used for setting the `value`. It is called after the
    * `value` is updated successfully.
@@ -51,13 +51,17 @@ export class MultiStepFormStepSchemaInternal<
   resolvedStep extends AnyResolvedStep,
   stepNumbers extends StepNumbers<resolvedStep>
 > {
-  readonly value: resolvedStep;
+  readonly #getValue: () => resolvedStep;
   readonly #setValue: (value: resolvedStep) => void;
 
-  constructor(options: InternalOptions<resolvedStep>) {
-    const { value, setValue } = options;
+  private get value() {
+    return this.#getValue();
+  }
 
-    this.value = value;
+  constructor(options: InternalOptions<resolvedStep>) {
+    const { getValue, setValue } = options;
+
+    this.#getValue = getValue;
     this.#setValue = setValue;
   }
 
@@ -84,8 +88,13 @@ export class MultiStepFormStepSchemaInternal<
       currentStep
     >
   ) {
-    const { targetStep, updater, ctxData, fields = 'all' } = options;
+    const { targetStep, updater, ctxData, fields = 'all', debug } = options;
+    const logger = new MultiStepFormLogger({
+      debug,
+      prefix: (value) => `${value}:update${targetStep}`,
+    });
 
+    logger.info(`${targetStep} will be updated`);
     invariant(
       isValidStepKey(this.value, targetStep),
       `[update]: The target step ${targetStep} isn't a valid step. Please select a valid step`
@@ -102,6 +111,7 @@ export class MultiStepFormStepSchemaInternal<
         typeof ctxData === 'function',
         '[update]: "ctxData" must be a function'
       );
+      logger.info('Custom "ctx" will be used');
 
       const additionalCtx = ctxData({ ctx: values as never });
 
@@ -109,6 +119,16 @@ export class MultiStepFormStepSchemaInternal<
         typeof additionalCtx === 'object' &&
           Object.keys(additionalCtx).length > 0,
         '[update]: "ctxData" must return an object with keys'
+      );
+
+      logger.info(
+        `Custom "ctx" consists of the following keys: ${new Intl.ListFormat(
+          'en',
+          {
+            style: 'long',
+            type: 'conjunction',
+          }
+        ).format(Object.keys(additionalCtx))}`
       );
 
       ctx = {
@@ -121,6 +141,7 @@ export class MultiStepFormStepSchemaInternal<
       ctx: ctx as never,
       update: this.createHelperFnInputUpdate([targetStep]),
     });
+    logger.info(`The updated data is ${JSON.stringify(updated, null, 2)}`);
 
     // TODO validate `updater` - will have to be done in each case (I think)
 
@@ -163,12 +184,15 @@ export class MultiStepFormStepSchemaInternal<
         })}`
       );
 
+      logger.info('The entire step will be updated');
+
       updatedValue = {
         ...updatedValue,
         [targetStep]: path.updateAt(updatedValue, paths, updated as never),
       };
 
       this.handlePostUpdate(updatedValue);
+      logger.info(`The new value is: ${JSON.stringify(updatedValue, null, 2)}`);
 
       return;
     }
@@ -201,12 +225,20 @@ export class MultiStepFormStepSchemaInternal<
         })}`
       );
 
+      logger.info(
+        `The following fields will be updated: ${new Intl.ListFormat('en', {
+          type: 'conjunction',
+          style: 'long',
+        }).format(fields)}`
+      );
+
       updatedValue = {
         ...updatedValue,
         [targetStep]: path.updateAt(currentStep, fields, updated as never),
       };
 
       this.handlePostUpdate(updatedValue);
+      logger.info(`The new value is: ${JSON.stringify(updatedValue, null, 2)}`);
 
       return;
     }
@@ -251,11 +283,19 @@ export class MultiStepFormStepSchemaInternal<
         ),
       };
 
+      logger.info(
+        `The following fields will be updated: ${new Intl.ListFormat('en', {
+          type: 'conjunction',
+          style: 'long',
+        }).format(Object.keys(fields))}`
+      );
       this.handlePostUpdate(updatedValue);
+      logger.info(`The new value is: ${JSON.stringify(updatedValue, null, 2)}`);
 
       return;
     }
 
+    logger.error('Unsupported value for the "fields" option');
     throw new TypeError(
       `[update]: property "fields" must be set to one of the following: "all", an array of deep paths to update, or an object of paths. Was ${typeof updater}`,
       { cause: updater }
@@ -395,7 +435,9 @@ export class MultiStepFormStepSchemaInternal<
         this.value,
         stepData
       ) as never;
-      const createInputUpdateFn = this.createHelperFnInputUpdate(stepData);
+      const createInputUpdateFn = this.createHelperFnInputUpdate(
+        stepData
+      ) as HelperFnUpdateFn<resolvedStep, stepNumbers, chosenSteps>;
 
       if (typeof optionsOrFunction === 'function') {
         return () =>
@@ -470,23 +512,24 @@ export class MultiStepFormStepSchemaInternal<
     values extends AnyResolvedStep,
     additionalProps extends Record<string, unknown>
   >(values: values, additionalProps?: (step: number) => additionalProps) {
-    for (const [key, stepValue] of Object.entries(values)) {
-      const targetStep = [key] as HelperFnChosenSteps.tupleNotation<
+    let enriched = { ...values };
+
+    for (const [key, stepValue] of Object.entries(enriched)) {
+      const [targetStep] = [key] as HelperFnChosenSteps.tupleNotation<
         ValidStepKey<stepNumbers>
       >;
-      const step = Number.parseInt(key.replace('step', '')) as stepNumbers;
+      const step = Number.parseInt(
+        targetStep.replace('step', '')
+      ) as stepNumbers;
 
-      values = {
-        ...values,
-        [key as keyof resolvedStep]: {
-          ...(stepValue as object),
-          update: this.createStepUpdaterFn(targetStep[0]),
-          createHelperFn: this.createStepHelperFn(targetStep),
-          ...additionalProps?.(step),
-        },
+      enriched[targetStep] = {
+        ...stepValue,
+        update: this.createStepUpdaterFn(targetStep),
+        createHelperFn: this.createStepHelperFn([targetStep]),
+        ...additionalProps?.(step),
       };
     }
 
-    return values;
+    return enriched;
   }
 }

@@ -248,6 +248,11 @@ export namespace UpdateFn {
      * updater `fn`.
      */
     fields?: TField;
+    /**
+     * Enables verbose debug logging for this update operation.
+     * Set to `true` to output helpful information for troubleshooting.
+     */
+    debug?: boolean;
     updater: Updater<
       Expand<
         HelperFnInputBase<

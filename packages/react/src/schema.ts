@@ -136,9 +136,9 @@ export class MultiStepFormSchema<
       resolvedStep,
       stepNumbers
     >({
-      value: this.stepSchema.value as never,
+      getValue: () => this.stepSchema.value as never,
       setValue: (value) => {
-        this.stepSchema.value = value as never;
+        this.stepSchema.value = { ...value } as never;
         this.storage.add(value);
         this.notify();
       },

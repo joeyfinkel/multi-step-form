@@ -531,20 +531,19 @@ export class MultiStepFormStepSchema<
 
     super(rest as never);
 
-    const resolvedValues = createStep(this.original);
+    this.value = createStep(this.original);
 
     this.#internal = new MultiStepFormStepSchemaInternal<
       resolvedStep,
       stepNumbers
     >({
-      value: resolvedValues,
-      setValue: (value) => {
-        this.value = value;
-      },
+      getValue: () => this.value,
+      setValue: (next) => this.handlePostUpdate(next as never)
     });
 
     // this.value = this.#internal.enrichValues(resolvedValues);
-    this.value = this.#internal.enrichValues(resolvedValues, (step) => {
+    this.sync()
+    this.value = this.#internal.enrichValues(this.value, (step) => {
       const key = `step${step as stepNumbers}`;
       const stepData = [key] as HelperFnChosenSteps.tupleNotation<
         ValidStepKey<stepNumbers>
@@ -554,7 +553,7 @@ export class MultiStepFormStepSchema<
         resolvedStep,
         stepNumbers,
         HelperFnChosenSteps.tupleNotation<ValidStepKey<stepNumbers>>
-      >(resolvedValues, stepData);
+      >(this.value, stepData);
 
       return {
         createComponent: this.createStepSpecificComponentFactory(
@@ -793,7 +792,7 @@ export class MultiStepFormStepSchema<
     debugger;
     // Not exactly sure why `this.value` could be undefined, but it can be so
     // we fallback to the internal value
-    const resolvedValues = this.value ?? this.#internal.value;
+    const resolvedValues = this.value;
     const targetStep = stepData[0];
     const update = this.#internal
       .createStepUpdaterFn(targetStep)

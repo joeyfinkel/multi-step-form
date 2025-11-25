@@ -36,14 +36,12 @@ import {
   CreateHelperFunctionOptionsWithValidator,
   CreateHelperFunctionOptionsWithoutValidator,
   CreateStepHelperFn,
-  CreatedHelperFnInput,
   CreatedHelperFnWithInput,
   CreatedHelperFnWithoutInput,
   ExtractStepFromKey,
   FirstStep,
   GetCurrentStep,
   HelperFnChosenSteps,
-  HelperFnCtx,
   HelperFnWithValidator,
   HelperFnWithoutValidator,
   InferStepOptions,
@@ -59,7 +57,7 @@ import {
   UpdateFn,
   ValidStepKey,
 } from './types';
-import { createCtx, getStep, type GetStepOptions } from './utils';
+import { getStep, type GetStepOptions } from './utils';
 
 export interface MultiStepFormStepSchemaFunctions<
   TResolvedStep extends AnyResolvedStep,
@@ -389,11 +387,9 @@ export class MultiStepFormStepSchema<
 
     this.original = steps;
 
-    const resolvedSteps = createStep<step, casing>(
-      this.original
-    ) as resolvedStep;
+    this.value = createStep<step, casing>(this.original) as resolvedStep;
     this.storage = new MultiStepFormStorage<resolvedStep, storageKey>({
-      data: resolvedSteps,
+      data: this.value,
       key: (storage?.key ?? DEFAULT_STORAGE_KEY) as storageKey,
       store: storage?.store,
     });
@@ -401,14 +397,11 @@ export class MultiStepFormStepSchema<
       resolvedStep,
       stepNumbers
     >({
-      value: resolvedSteps,
-      setValue: (value) => {
-        this.value = value;
-        this.handlePostUpdate();
-      },
+      getValue: () => this.value,
+      setValue: (next) => this.handlePostUpdate(next),
     });
 
-    this.value = this.#internal.enrichValues(resolvedSteps);
+    this.value = this.#internal.enrichValues(this.value);
     this.stepNumbers = Object.keys(this.value).map((key) =>
       Number.parseInt(key.replace('step', ''))
     );
@@ -448,10 +441,26 @@ export class MultiStepFormStepSchema<
       isValidStepKey: (value) =>
         isValidStepKey<resolvedStep>(this.value, value),
     };
+
+    this.sync();
   }
 
   getSnapshot() {
     return this;
+  }
+
+  /**
+   * Syncs the values from storage to {@linkcode value}.
+   */
+  sync() {
+    // TODO add "syncOptions" so caller can chose where to sync from ('storage' | 'instance')
+    const storageValues = this.storage.get();
+
+    if (storageValues) {
+      const enrichedValues = this.#internal.enrichValues(storageValues);
+
+      this.value = { ...enrichedValues };
+    }
   }
 
   protected notify() {
@@ -496,8 +505,11 @@ export class MultiStepFormStepSchema<
     return this.get<LastStep<resolvedStep>>({ step: lastStep as never });
   }
 
-  private handlePostUpdate() {
+  protected handlePostUpdate(next: resolvedStep) {
+    this.value = { ...next };
+
     this.storage.add(this.value);
+    this.sync();
     this.notify();
   }
 
@@ -517,130 +529,6 @@ export class MultiStepFormStepSchema<
     >
   ) {
     this.#internal.update(options);
-  }
-
-  private createStepHelperFnImpl<
-    chosenSteps extends HelperFnChosenSteps<resolvedStep, stepNumbers>
-  >(stepData: chosenSteps) {
-    return <validator, additionalCtx extends Record<string, unknown>, response>(
-      optionsOrFunction:
-        | Omit<
-            CreateHelperFunctionOptionsWithValidator<
-              resolvedStep,
-              stepNumbers,
-              chosenSteps,
-              validator,
-              additionalCtx
-            >,
-            'stepData'
-          >
-        | Omit<
-            CreateHelperFunctionOptionsWithoutValidator<
-              resolvedStep,
-              stepNumbers,
-              chosenSteps
-            >,
-            'stepData'
-          >
-        | HelperFnWithoutValidator<
-            resolvedStep,
-            stepNumbers,
-            chosenSteps,
-            additionalCtx,
-            response
-          >,
-      fn:
-        | HelperFnWithValidator<
-            resolvedStep,
-            stepNumbers,
-            chosenSteps,
-            validator,
-            additionalCtx,
-            response
-          >
-        | HelperFnWithoutValidator<
-            resolvedStep,
-            stepNumbers,
-            chosenSteps,
-            additionalCtx,
-            response
-          >
-    ) => {
-      const ctx = createCtx<resolvedStep, stepNumbers, chosenSteps>(
-        this.value,
-        stepData
-      ) as never;
-      const createInputUpdateFn = this.#internal.createHelperFnInputUpdate.bind(
-        this.#internal
-      );
-
-      if (typeof optionsOrFunction === 'function') {
-        return () =>
-          optionsOrFunction({
-            ctx,
-            update: createInputUpdateFn(stepData),
-          });
-      }
-
-      if (typeof optionsOrFunction === 'object') {
-        return (input?: CreatedHelperFnInput<validator>) => {
-          if ('validator' in optionsOrFunction) {
-            invariant(
-              typeof input === 'object',
-              'An input is expected since you provided a validator'
-            );
-
-            runStandardValidation(
-              optionsOrFunction.validator as StandardSchemaValidator,
-              input.data
-            );
-
-            let resolvedCtx = ctx as HelperFnCtx<
-              resolvedStep,
-              stepNumbers,
-              chosenSteps
-            >;
-
-            if (optionsOrFunction.ctxData) {
-              const currentStepKey = (
-                stepData as HelperFnChosenSteps.tupleNotation<
-                  ValidStepKey<stepNumbers>
-                >
-              )[0] as keyof resolvedStep;
-              const { [currentStepKey]: _, ...values } = this.value;
-
-              resolvedCtx = {
-                ...resolvedCtx,
-                ...optionsOrFunction.ctxData({ ctx: values as never }),
-              };
-            }
-
-            return fn({
-              ctx: resolvedCtx as never,
-              update: createInputUpdateFn(stepData),
-              ...input,
-            });
-          }
-
-          return (
-            fn as HelperFnWithoutValidator<
-              resolvedStep,
-              stepNumbers,
-              chosenSteps,
-              additionalCtx,
-              response
-            >
-          )({
-            ctx,
-            update: createInputUpdateFn(stepData),
-          });
-        };
-      }
-
-      throw new Error(
-        `The first argument must be a function or an object, (was ${typeof optionsOrFunction})`
-      );
-    };
   }
 
   /**
@@ -734,7 +622,7 @@ export class MultiStepFormStepSchema<
   ) {
     const { stepData, ...rest } = options;
 
-    return this.createStepHelperFnImpl(stepData)(rest, fn);
+    return this.#internal.createStepHelperFn(stepData)(rest, fn);
   }
 
   /**
