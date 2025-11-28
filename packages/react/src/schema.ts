@@ -90,6 +90,7 @@ export class MultiStepFormSchema<
   >
   implements HelperFunctions<resolvedStep, stepNumbers>
 {
+  // @ts-ignore
   stepSchema: MultiStepFormStepSchema<
     step,
     casing,
@@ -114,12 +115,9 @@ export class MultiStepFormSchema<
     >
   ) {
     const { nameTransformCasing = DEFAULT_CASING, storage, ...rest } = config;
+    const options = { nameTransformCasing, storage, ...rest };
 
-    super({
-      nameTransformCasing,
-      storage,
-      ...rest,
-    });
+    super(options);
 
     this.stepSchema = new MultiStepFormStepSchema<
       step,
@@ -128,10 +126,7 @@ export class MultiStepFormSchema<
       formAlias,
       formEnabledFor,
       formProps
-    >({
-      nameTransformCasing,
-      ...rest,
-    });
+    >(options);
     this.#internal = new MultiStepFormStepSchemaInternal<
       resolvedStep,
       stepNumbers

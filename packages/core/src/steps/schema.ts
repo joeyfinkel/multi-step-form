@@ -446,6 +446,13 @@ export class MultiStepFormStepSchema<
     this.sync();
   }
 
+  /**
+   * @internal
+   */
+  __getStorage() {
+    return this.storage;
+  }
+
   getSnapshot() {
     return this;
   }
@@ -455,7 +462,7 @@ export class MultiStepFormStepSchema<
    */
   sync() {
     // TODO add "syncOptions" so caller can chose where to sync from ('storage' | 'instance')
-    const storageValues = this.storage.get();
+    const storageValues = this.__getStorage().get();
 
     if (storageValues) {
       const enrichedValues = this.#internal.enrichValues(storageValues);
@@ -509,7 +516,7 @@ export class MultiStepFormStepSchema<
   protected handlePostUpdate(next: resolvedStep) {
     this.value = { ...next };
 
-    this.storage.add(this.value);
+    this.__getStorage().add(this.value);
     this.sync();
     this.notify();
   }
