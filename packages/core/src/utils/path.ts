@@ -294,6 +294,7 @@ export namespace path {
   }
   interface DeepCompareOptions<T> {
     includeValueMismatch?: boolean;
+
     transformExpected?: ExpectedTransformConfig<T>;
   }
 
@@ -421,35 +422,17 @@ export namespace path {
         return mismatches;
       }
 
+      // Both values are arrays.
+      // We *do* compare element structure/types where both have an index, but we
+      // intentionally ignore length differences (no missing/extra index errors).
       const maxLen = expected.length;
+
       for (let i = 0; i < maxLen; i++) {
         const expVal = expected[i];
         const actVal = actual[i];
         const path = basePath === '' ? `[${i}]` : `${basePath}[${i}]`;
 
-        if (i >= actual.length) {
-          mismatches.push({
-            path,
-            expected: formatExpected(expVal, path, options.transformExpected),
-            actual: undefined,
-            reason: 'missing-key',
-          });
-          continue;
-        }
-
         deepCompare(expVal, actVal, path, mismatches, options);
-      }
-
-      if (actual.length > expected.length) {
-        for (let i = expected.length; i < actual.length; i++) {
-          const path = basePath === '' ? `[${i}]` : `${basePath}[${i}]`;
-          mismatches.push({
-            path,
-            expected: undefined,
-            actual: actual[i],
-            reason: 'extra-key',
-          });
-        }
       }
 
       return mismatches;
