@@ -55,7 +55,8 @@ import {
   StepOptions,
   UnionToTuple,
   UpdateFn,
-  ValidStepKey
+  ValidStepKey,
+  type GetFieldsForStep,
 } from './types';
 import { getStep, type GetStepOptions } from './utils';
 
@@ -707,5 +708,67 @@ export class MultiStepFormStepSchema<
       nameTransformCasing: isCasingValid,
       ...options?.optionalKeysToCheck,
     });
+  }
+
+  /**
+   * Gets the value of a given field for a given step.
+   * @param step The step to get the value from.
+   * @param field The field to get the value from.
+   * @returns The value of the {@linkcode field}.
+   */
+  getValue<
+    step extends keyof resolvedStep,
+    field extends keyof GetFieldsForStep<resolvedStep, step>
+  >(step: step, field: field) {
+    const stepData = this.value[step];
+    const baseErrorMessage = `Unable to get the value for "${String(
+      step
+    )}.fields.${String(field)}"`;
+
+    invariant('fields' in stepData, baseErrorMessage);
+    invariant(
+      typeof stepData.fields === 'object',
+      `${baseErrorMessage} because "fields" is not an object. This shouldn't be the case, so please open an issue`
+    );
+
+    const fields = stepData.fields as Record<string, unknown>;
+    invariant(
+      field in fields,
+      (formatter) =>
+        `${baseErrorMessage} because the field "${String(
+          field
+        )}" is one of the available fields for ${String(
+          step
+        )}. Please try again with one of the available fields: ${formatter.format(
+          Object.keys(fields)
+        )}`
+    );
+
+    const { [String(field)]: _field } = fields;
+    invariant(
+      typeof _field === 'object',
+      `${baseErrorMessage.replace(
+        /"$/,
+        `.${_field}"`
+      )} because "${_field}" isn't an object`
+    );
+
+    invariant(
+      'defaultValue' in (_field as Record<string, unknown>),
+      `${baseErrorMessage.replace(
+        /"$/,
+        `.${_field}"`
+      )} because "${_field}" doesn't have a "defaultValue": \n${JSON.stringify(
+        _field,
+        null,
+        2
+      )}`
+    );
+
+    return (_field as { defaultValue: unknown })
+      .defaultValue as GetFieldsForStep<
+      resolvedStep,
+      step
+    >[field]['defaultValue'];
   }
 }

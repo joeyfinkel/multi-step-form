@@ -538,11 +538,11 @@ export class MultiStepFormStepSchema<
       stepNumbers
     >({
       getValue: () => this.value,
-      setValue: (next) => this.handlePostUpdate(next as never)
+      setValue: (next) => this.handlePostUpdate(next as never),
     });
 
     // this.value = this.#internal.enrichValues(resolvedValues);
-    this.sync()
+    this.sync();
     this.value = this.#internal.enrichValues(this.value, (step) => {
       const key = `step${step as stepNumbers}`;
       const stepData = [key] as HelperFnChosenSteps.tupleNotation<
@@ -619,12 +619,12 @@ export class MultiStepFormStepSchema<
 
               // In development, we can add additional verification here
               // Log hook calls for debugging (can be disabled in production by removing console.debug)
-              if (typeof console !== 'undefined' && console.debug) {
-                console.debug(
-                  `[multi-step-form] Hook "${key}" called successfully`,
-                  { result: result === undefined ? 'defined' : 'undefined' }
-                );
-              }
+              // if (typeof console !== 'undefined' && console.debug) {
+              //   console.debug(
+              //     `[multi-step-form] Hook "${key}" called successfully`,
+              //     { result: result === undefined ? 'defined' : 'undefined' }
+              //   );
+              // }
             } catch (error) {
               // Provide helpful error message if hook throws
               const errorMessage =
@@ -677,6 +677,7 @@ export class MultiStepFormStepSchema<
           typeof current.fields === 'object',
           `[${step}:createComponent]: the "fields" property must be an object, was ${typeof current.fields}`
         );
+        const stepUpdater = this.#internal.createStepUpdaterFn(step);
 
         const Field = createField((name) => {
           invariant(typeof name === 'string', () => {
@@ -699,9 +700,8 @@ export class MultiStepFormStepSchema<
             `[${step}:Field]: No "update" function was found`
           );
 
-          const { fields, update } = current;
           const { defaultValue, label, nameTransformCasing, type } = (
-            fields as AnyStepField
+            current.fields as AnyStepField
           )[name];
 
           return {
@@ -710,24 +710,38 @@ export class MultiStepFormStepSchema<
             nameTransformCasing,
             type,
             name,
-            onInputChange: (value: unknown) =>
-              // TODO remove type assertions
-              (
-                update as UpdateFn.stepSpecific<
-                  resolvedStep,
-                  stepNumbers,
-                  ValidStepKey<stepNumbers>
-                >
-              )({
+            onInputChange: (value: unknown) => {
+              // Handle Updater pattern: if value is a function, call it with the current field value
+              const resolvedValue =
+                typeof value === 'function'
+                  ? (value as (prev: unknown) => unknown)(
+                      this.getValue(step as never, name)
+                    )
+                  : value;
+              this.update({
+                targetStep: step,
+                updater: resolvedValue as never,
                 fields: [`fields.${name}.defaultValue`] as never,
-                updater: value as never,
-              }),
+              });
+            },
+            // onInputChange: (value: unknown) =>
+            //   // TODO remove type assertions
+            //   (
+            //     update as UpdateFn.stepSpecific<
+            //       resolvedStep,
+            //       stepNumbers,
+            //       ValidStepKey<stepNumbers>
+            //     >
+            //   )({
+            //     fields: [`fields.${name}.defaultValue`] as never,
+            //     updater: value as never,
+            //   }),
           };
         });
 
         let fnInput = {
           ctx,
-          onInputChange: this.#internal.createStepUpdaterFn(step),
+          onInputChange: stepUpdater,
           Field,
           ...hookResults,
         };
