@@ -1,5 +1,13 @@
 # @jfdevelops/react-multi-step-form
 
+## 1.0.0-alpha.9
+
+### Patch Changes
+
+- Updating an array set as a `defaultValue` during schema initialization, now updates properly
+- Updated dependencies
+  - @jfdevelops/multi-step-form@1.0.0-alpha.9
+
 ## 1.0.0-alpha.8
 
 ### Patch Changes
