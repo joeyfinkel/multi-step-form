@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  MultiStepFormStepSchema
-} from '../../src';
+import { MultiStepFormStepSchema } from '../../src';
 
 describe('multi step form step schema: update', () => {
   it.skip('should update the specified data immutably', () => {

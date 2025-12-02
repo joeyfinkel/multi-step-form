@@ -28,6 +28,7 @@ import {
   type StandardSchemaValidator,
 } from '@/utils/validator';
 import { Subscribable } from '../subscribable';
+import { fields as fieldsUtils } from './fields';
 import {
   AnyResolvedStep,
   AnyStepField,
@@ -55,8 +56,7 @@ import {
   StepOptions,
   UnionToTuple,
   UpdateFn,
-  ValidStepKey,
-  type GetFieldsForStep,
+  ValidStepKey
 } from './types';
 import { getStep, type GetStepOptions } from './utils';
 
@@ -718,7 +718,7 @@ export class MultiStepFormStepSchema<
    */
   getValue<
     step extends keyof resolvedStep,
-    field extends keyof GetFieldsForStep<resolvedStep, step>
+    field extends fieldsUtils.getDeep<resolvedStep, step>
   >(step: step, field: field) {
     const stepData = this.value[step];
     const baseErrorMessage = `Unable to get the value for "${String(
@@ -731,44 +731,15 @@ export class MultiStepFormStepSchema<
       `${baseErrorMessage} because "fields" is not an object. This shouldn't be the case, so please open an issue`
     );
 
-    const fields = stepData.fields as Record<string, unknown>;
-    invariant(
-      field in fields,
-      (formatter) =>
-        `${baseErrorMessage} because the field "${String(
-          field
-        )}" is one of the available fields for ${String(
-          step
-        )}. Please try again with one of the available fields: ${formatter.format(
-          Object.keys(fields)
-        )}`
-    );
+    const fields = stepData.fields as AnyStepField;
 
-    const { [String(field)]: _field } = fields;
-    invariant(
-      typeof _field === 'object',
-      `${baseErrorMessage.replace(
-        /"$/,
-        `.${_field}"`
-      )} because "${_field}" isn't an object`
-    );
-
-    invariant(
-      'defaultValue' in (_field as Record<string, unknown>),
-      `${baseErrorMessage.replace(
-        /"$/,
-        `.${_field}"`
-      )} because "${_field}" doesn't have a "defaultValue": \n${JSON.stringify(
-        _field,
-        null,
-        2
-      )}`
-    );
-
-    return (_field as { defaultValue: unknown })
-      .defaultValue as GetFieldsForStep<
+    const defaultValue = fieldsUtils.resolvedDeepPath<
       resolvedStep,
-      step
-    >[field]['defaultValue'];
+      step,
+      fieldsUtils.get<resolvedStep, step>,
+      field
+    >(field, fields as fieldsUtils.get<resolvedStep, step>);
+
+    return defaultValue;
   }
 }
