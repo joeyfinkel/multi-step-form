@@ -1,0 +1,118 @@
+name: Alpha Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  alpha-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        working-directory: packages/react
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run tests (core)
+        env:
+          CI: true
+        run: pnpm run test:core
+
+      - name: Build (core)
+        run: pnpm run build:core
+
+      - name: Run tests (react)
+        env:
+          CI: true
+        run: pnpm run test:react --browser.headless=true --reporter=verbose --reporter=github-actions
+
+      - name: Build (react)
+        run: pnpm run build:react
+
+      # --- Fixed changeset detection block ---
+      - name: Check for pending Changesets
+        id: changesets
+        run: |
+          echo "Checking for pending changesets..."
+          npx changeset status --output status.json
+          count=$(jq '.changesets | length' status.json)
+          echo "Found $count pending changeset(s)"
+          echo "count=$count" >> $GITHUB_OUTPUT
+      # ---------------------------------------
+
+      - name: Skip if no changesets
+        if: steps.changesets.outputs.count == '0'
+        run: |
+          echo "No new changesets detected. Skipping alpha release."
+          exit 0
+
+      - name: Version bump (alpha)
+        if: steps.changesets.outputs.count != '0'
+        run: |
+          npx changeset version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: bump alpha versions [skip ci]" || echo "No version bump"
+          git push || echo "No changes to push"
+
+      - name: Get version from package.json
+        if: steps.changesets.outputs.count != '0'
+        id: pkg
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Create Git tag for version
+        if: steps.changesets.outputs.count != '0'
+        run: |
+          git tag v${{ steps.pkg.outputs.version }}
+          git push origin v${{ steps.pkg.outputs.version }}
+
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.count != '0'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: Alpha v${{ steps.pkg.outputs.version }}
+          body: "Automated alpha release for version v${{ steps.pkg.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish alpha packages
+        if: steps.changesets.outputs.count != '0'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -e
+          cd packages/core
+          pnpm publish --tag alpha --access public --no-git-checks || echo "Already published"
+          cd ../react
+          pnpm publish --tag alpha --access public --no-git-checks || echo "Already published"
