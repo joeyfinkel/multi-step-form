@@ -1,24 +1,4 @@
-import type { unionHelpers } from './types';
-
-export type DeepKeys<T> = T extends object
-  ? {
-      [K in keyof T & string]:
-        | K
-        | (T[K] extends object ? `${K}.${DeepKeys<T[K]>}` : never);
-    }[keyof T & string]
-  : never;
-
-// Resolve a deep path (dot-separated) to its nested value type
-export type DeepValue<
-  T,
-  Path extends string
-> = Path extends `${infer K}.${infer Rest}`
-  ? K extends keyof T
-    ? DeepValue<T[K], Rest>
-    : never
-  : Path extends keyof T
-  ? T[Path]
-  : never;
+import type { DeepKeys, unionHelpers } from './types';
 
 export namespace path {
   type getBy<T, TPath extends string> = TPath extends `${infer K}.${infer Rest}`
