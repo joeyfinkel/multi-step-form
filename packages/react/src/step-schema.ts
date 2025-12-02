@@ -26,13 +26,10 @@ import {
   type Updater,
   type ValidStepKey,
 } from '@jfdevelops/multi-step-form';
+import { MultiStepFormStepSchemaInternal } from '@jfdevelops/multi-step-form/_internal';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { createField, type Field } from './field';
 import { MultiStepFormSchemaConfig } from './form-config';
-import {
-  MultiStepFormStepSchemaInternal,
-  path,
-} from '@jfdevelops/multi-step-form/_internal';
 
 export interface MultiStepFormSchemaStepConfig<
   TStep extends Step<TCasing>,
@@ -185,7 +182,6 @@ export namespace StepSpecificComponent {
     // ) => void;
     Field: Field.component<
       TResolvedStep,
-      TSteps,
       // @ts-ignore Type checking works properly, type doesn't match
       HelperFnChosenSteps.extractStepNumber<TResolvedStep, TSteps, TChosenSteps>
     >;
@@ -704,15 +700,8 @@ export class MultiStepFormStepSchema<
             'update' in current,
             `[${step}:Field]: No "update" function was found`
           );
-          const [parent, ...rest] = name.split('.');
-          const fullFieldPath =
-            rest.length === 0
-              ? `${parent}.defaultValue`
-              : `${parent}.defaultValue.${rest.join('.')}`;
-          const defaultValue = path.pickBy(
-            current.fields,
-            fullFieldPath as never
-          );
+
+          const defaultValue = this.getValue(step as never, name as never);
 
           const { label, nameTransformCasing, type } = (
             current.fields as AnyStepField
@@ -728,9 +717,7 @@ export class MultiStepFormStepSchema<
               // Handle Updater pattern: if value is a function, call it with the current field value
               const resolvedValue =
                 typeof value === 'function'
-                  ? (value as (prev: unknown) => unknown)(
-                      this.getValue(step as never, name)
-                    )
+                  ? (value as (prev: unknown) => unknown)(defaultValue)
                   : value;
               this.update({
                 targetStep: step,

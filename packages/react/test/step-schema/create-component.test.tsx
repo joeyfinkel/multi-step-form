@@ -1,7 +1,7 @@
 import type { MultiStepFormSchemaConfig } from '@/form-config';
 import type {
   StepNumbers,
-  StrippedResolvedStep
+  StrippedResolvedStep,
 } from '@jfdevelops/multi-step-form';
 import { ComponentPropsWithRef } from 'react';
 import { describe, expect, it, test, vi } from 'vitest';

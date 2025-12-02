@@ -1,5 +1,5 @@
-import { createMultiStepFormSchema } from '../../src';
 import { describe, expect, it } from 'vitest';
+import { createMultiStepFormSchema } from '../../src';
 
 describe('react: multi step form schema update', () => {
   it("should updated the target step using the class's update method", () => {
