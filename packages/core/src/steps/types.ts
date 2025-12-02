@@ -2,13 +2,14 @@ import type { StorageConfig } from '@/storage';
 import {
   type CasingType,
   type Constrain,
+  type DeepKeys,
   type DefaultCasing,
   type DefaultFieldType,
   type Expand,
   type FieldType,
   type objectHelpers,
 } from '@/utils';
-import type { DeepKeys, path } from '@/utils/path';
+import type { path } from '@/utils/path';
 import type {
   AnyValidator,
   DefaultValidator,

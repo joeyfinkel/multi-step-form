@@ -66,3 +66,29 @@ export namespace objectHelpers {
       : true
     : false;
 }
+
+export type DeepKeys<T> = T extends object
+  ? T extends readonly any[] | Date
+    ? never
+    : {
+        [K in keyof T & string]:
+          | K
+          | (T[K] extends object
+              ? T[K] extends readonly any[] | Date
+                ? never
+                : `${K}.${DeepKeys<T[K]>}`
+              : never);
+      }[keyof T & string]
+  : never;
+
+// Resolve a deep path (dot-separated) to its nested value type
+export type DeepValue<
+  T,
+  Path extends string
+> = Path extends `${infer K}.${infer Rest}`
+  ? K extends keyof T
+    ? DeepValue<T[K], Rest>
+    : never
+  : Path extends keyof T
+  ? T[Path]
+  : never;
