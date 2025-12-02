@@ -1,5 +1,14 @@
 # @jfdevelops/multi-step-form
 
+## 1.0.0-alpha.10
+
+### Patch Changes
+
+- # Adds Deep Keys Support
+  - core: `MultiStepFormStepSchema.getValue()`
+  - react: `<Field />` component's `name` prop
+    - `defaultValue` and `onInputChange` support the deep values as well
+
 ## 1.0.0-alpha.9
 
 ### Patch Changes
