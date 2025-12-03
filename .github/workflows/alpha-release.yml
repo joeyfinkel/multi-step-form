@@ -112,7 +112,7 @@ jobs:
         id: pkg
         run: |
           echo "Computing highest version among all packages..."
-          versions=$(find packages -type f -name package.json -exec node -p "try {require('./{}').version} catch{}" \; | grep -v '^undefined$')
+          versions=$(find packages -mindepth 2 -maxdepth 2 -name package.json -not -path "*/node_modules/*" -exec node -p "try { require('./{}').version } catch (e) {}" \; | grep -v '^undefined$')
           echo "Found versions:"
           echo "$versions"
 
