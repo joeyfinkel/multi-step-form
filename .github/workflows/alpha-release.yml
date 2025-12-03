@@ -118,11 +118,7 @@ jobs:
           echo "Found versions:"
           echo "$versions"
 
-          max_version=$(node -e "
-            const semver = require('semver');
-            const list = (process.env.VERSIONS || '').split(/\\s+/).filter(Boolean);
-            console.log(list.sort(semver.rcompare)[0]);
-          " VERSIONS="$versions")
+          max_version=$(printf "%s\n" $versions | npx semver -r "*" | sort -rV | head -n 1)
 
           echo "Highest version: $max_version"
           echo "version=$max_version" >> $GITHUB_OUTPUT
