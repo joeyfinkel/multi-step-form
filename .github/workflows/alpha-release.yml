@@ -100,6 +100,7 @@ jobs:
         with:
           tag_name: ${{ steps.tagger.outputs.tag }}
           name: ${{ steps.tagger.outputs.tag }}
+          prerelease: true
           generate_release_notes: true
           body: |
             🚀 Automated Alpha Release: **${{ steps.tagger.outputs.tag }}**
