@@ -1,5 +1,11 @@
 # @jfdevelops/react-multi-step-form
 
+## 1.0.0-alpha.12
+
+### Patch Changes
+
+- 2d59e87: `onInputChange` of the `<Field />` component has access to the most up to date data for that field
+
 ## 1.0.0-alpha.11
 
 ### Patch Changes
