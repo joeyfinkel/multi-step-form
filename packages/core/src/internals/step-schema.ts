@@ -431,24 +431,32 @@ export class MultiStepFormStepSchemaInternal<
             response
           >
     ) => {
-      const ctx = createCtx<resolvedStep, stepNumbers, chosenSteps>(
-        this.value,
-        stepData
-      ) as never;
       const createInputUpdateFn = this.createHelperFnInputUpdate(
         stepData
       ) as HelperFnUpdateFn<resolvedStep, stepNumbers, chosenSteps>;
 
       if (typeof optionsOrFunction === 'function') {
-        return () =>
-          optionsOrFunction({
+        return () => {
+          // Create ctx fresh each time the function is called to ensure it has the latest this.value
+          const ctx = createCtx<resolvedStep, stepNumbers, chosenSteps>(
+            this.value,
+            stepData
+          ) as never;
+          return optionsOrFunction({
             ctx,
             update: createInputUpdateFn,
           });
+        };
       }
 
       if (typeof optionsOrFunction === 'object') {
         return (input?: CreatedHelperFnInput<validator>) => {
+          // Create ctx fresh each time the function is called to ensure it has the latest this.value
+          const ctx = createCtx<resolvedStep, stepNumbers, chosenSteps>(
+            this.value,
+            stepData
+          ) as never;
+
           if ('validator' in optionsOrFunction) {
             invariant(
               typeof input === 'object',
