@@ -1,5 +1,12 @@
 # @jfdevelops/multi-step-form
 
+## 1.0.0-alpha.11
+
+### Patch Changes
+
+- 2cf0908: Fixes `ctx` not being up to date when `createHelperFn` is called
+- 5217d0b: Fixes the deep path normalization to make updating work properly
+
 ## 1.0.0-alpha.10
 
 ### Patch Changes

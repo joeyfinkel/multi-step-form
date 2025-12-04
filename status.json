@@ -3,23 +3,41 @@
     {
       "releases": [
         {
-          "name": "@jfdevelops/react-multi-step-form",
+          "name": "@jfdevelops/multi-step-form",
           "type": "patch"
         }
       ],
-      "summary": "Update version to work with npm",
-      "id": "wacky-pans-sniff"
+      "summary": "Fixes `ctx` not being up to date when `createHelperFn` is called",
+      "id": "cold-lions-talk"
+    },
+    {
+      "releases": [
+        {
+          "name": "@jfdevelops/multi-step-form",
+          "type": "patch"
+        }
+      ],
+      "summary": "Fixes the deep path normalization to make updating work properly",
+      "id": "free-hounds-invent"
     }
   ],
   "releases": [
     {
+      "name": "@jfdevelops/multi-step-form",
+      "type": "patch",
+      "oldVersion": "1.0.0-alpha.10",
+      "changesets": [
+        "cold-lions-talk",
+        "free-hounds-invent"
+      ],
+      "newVersion": "1.0.0-alpha.11"
+    },
+    {
       "name": "@jfdevelops/react-multi-step-form",
       "type": "patch",
-      "oldVersion": "1.0.0-alpha.12",
-      "changesets": [
-        "wacky-pans-sniff"
-      ],
-      "newVersion": "1.0.0-alpha.13"
+      "oldVersion": "1.0.0-alpha.13",
+      "changesets": [],
+      "newVersion": "1.0.0-alpha.14"
     },
     {
       "name": "react-basic",
@@ -36,8 +54,10 @@
     },
     "changesets": [
       "big-bags-hunt",
+      "cold-lions-talk",
       "cozy-insects-crash",
       "flat-sheep-tan",
+      "free-hounds-invent",
       "humble-queens-agree",
       "mighty-emus-cross",
       "seven-buttons-hunt",
